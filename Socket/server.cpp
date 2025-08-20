@@ -2,7 +2,7 @@
 #include<stdio.h>
 #include<string>
 
-#include "C:\Users\My Desktop\Documents\Malware\code\winapi\SocketFile\SocketFile\SocketFile.cpp"
+#include "sendRecvFileSocket.cpp"
 
 #pragma comment(lib, "ws2_32.lib")
 

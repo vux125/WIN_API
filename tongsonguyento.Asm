@@ -170,7 +170,7 @@ luura:
 	;in ra file
 	push	0
 	push	FILE_ATTRIBUTE_NORMAL
-	push	3
+	push	OPEN_ALWAYS
 	push	NULL
 	push	FILE_SHARE_WRITE
 	push	GENERIC_WRITE
@@ -189,4 +189,5 @@ luura:
 	
 	
  	
+
 end start 

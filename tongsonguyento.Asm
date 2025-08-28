@@ -187,7 +187,5 @@ luura:
 	push	eax
 	call 	CloseHandle
 	
-	
- 	
-
 end start 
+

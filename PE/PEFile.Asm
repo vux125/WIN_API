@@ -17,6 +17,7 @@ hFileInput dd ?
 hFileOutput dd ?
 
 hexchar db "0123456789ABCDEF", 0
+br db "------------------------------------------------------------------", 0, 0dh, 0ah
 crlf db 0dh, 0ah
 space db 20h,20h
 w_buffer db 5 dup(0)
@@ -69,10 +70,24 @@ e_lfanew_str db "e_lfanew: ", 0
 e_lfanew dd ?
 
 image_nt_header db "PE HEADER", 0
+start_pe_header dd ?
 signature_str db "signature: ", 0
 signature dd ?
-
-
+fileHeader db "file_header:", 0dh, 0ah
+Machine_str db "Machine: ", 0
+Machine dw ?
+NumberOfSections_str db "NumberOfSections: ", 0
+NumberOfSections dw ? 
+TimeDateStamp_str db "TimeDateStamp: ", 0
+TimeDateStamp dd ?
+PointerToSymbols_str db "PointerToSymbols: ", 0
+PointerToSymbols dd ?
+NumberOfSymbols_str db "NumberOfSymbols: ",0
+NumberOfSymbols dd ?
+SizeOfOptionalHeader_str db "SizeOfOptionalHeader: ", 0
+SizeOfOptionalHeader dw ?
+Characteristics_str db "Characteristics: ", 0
+Characteristics dw ? 
 
 
 .code
@@ -110,6 +125,12 @@ next_nible2:
 	loop 	next_nible2	
 	mov 	byte ptr [edi], 0
 	
+	push 	2
+	push	0
+	push 	0
+	push	hFile
+	call 	SetFilePointer
+	
 	push	4
 	push	offset address
 	push	offset w_buffer
@@ -121,7 +142,7 @@ next_nible2:
 
 PrintHexWord ENDP
 
-WriteInFile PROC hFile:dword, titl:dword, value:dword, ost:dword, sz:dword
+WriteInFile PROC uses ecx hFile:dword, titl:dword, value:dword, ost:dword, sz:dword
 	xor 	eax, eax
 	push 	titl
 	call 	lstrlen
@@ -199,38 +220,45 @@ ret
 
 ReadByte endp
 
-PrintHexDword PROC uses eax ebx ecx edx,hFile:dword, titl:dword, w:dword, ost:dword
-
-	mov 	ebx, w
-	mov 	eax, dword ptr [ebx]
-	mov 	ecx, 8
-	lea 	edi, dw_buffer
+PrintHexDword PROC uses ecx eax ebx edx edi, hFile:dword, titl:dword, d:dword, ost:dword
 	
-next_nible1:
-	xor		ebx, ebx
-	rol 	eax, 4
-	mov 	bl, al
-	and 	bl, 0fh
-	mov 	dl,[hexchar + ebx]
+	mov 	ecx, d
+	mov 	ebx, dword ptr [ecx]
+	mov		eax, 0
+	lea		edi, offset dw_buffer
+	
+next_nible:
+	xor 	edx,edx
+	rol		ebx, 4
+	mov		dl, bl
+	and 	dl, 0fh
+	mov		dl, [hexchar + edx]
 	mov 	[edi], dl
-	inc 	di
-	loop 	next_nible1
-	mov 	byte ptr [edi], 0
+	inc		di
+	inc		eax
+	cmp 	eax, 8
+	jne 	next_nible
 	
-	
-	mov		eax, ost
-	mov 	ecx, 8
-	lea 	edi, address
+	mov		ebx, ost
+	mov 	eax, 0
+	lea 	edi, offset address
 next_nible2:
-	xor		ebx, ebx
-	rol 	eax, 4
-	mov 	bl, al
-	and 	bl, 0fh
-	mov 	dl,[hexchar + ebx]
+	xor		edx, edx
+	rol 	ebx, 4
+	mov 	dl, bl
+	and 	dl, 0fh
+	mov 	dl,[hexchar + edx]
 	mov 	[edi], dl
 	inc 	di
-	loop 	next_nible2	
-	mov 	byte ptr [edi], 0
+	inc		eax
+	cmp 	eax, 8
+	jne 	next_nible2	
+	
+	push 	2
+	push	0
+	push 	0
+	push	hFile
+	call 	SetFilePointer
 	
 	push	8
 	push	offset address
@@ -241,8 +269,7 @@ next_nible2:
 	
 	ret
 
-PrintHexDword ENDP
-
+PrintHexDword endp
 ;----------------------------------------------------------
 start:	
 
@@ -647,108 +674,202 @@ e_res2_arr:
 	
 	;e_lfanew
 	
-	push	0
-	push	0
-	push	ecx
-	push 	dword ptr [hFileOutput]
-	call 	SetFilePointer
 	
-	push	0
-	push	0
 	push	4
-	push 	offset e_lfanew
-	push	dword ptr [hFileInput]
-	call 	ReadFile
-
-	mov 	ebx,dword ptr [e_lfanew]
-	mov		eax, 0
-	lea		edi, offset dw_buffer
-	
-next_nible:
-	xor 	edx,edx
-	rol		ebx, 4
-	mov		dl, bl
-	and 	dl, 0fh
-	mov		dl, [hexchar + edx]
-	mov 	[edi], dl
-	inc		di
-	inc		eax
-	cmp 	eax, 8
-	jne 	next_nible
-	
-	mov		ebx, ecx
-	mov 	eax, 0
-	lea 	edi, offset address
-next_nible2:
-	xor		edx, edx
-	rol 	ebx, 4
-	mov 	dl, bl
-	and 	dl, 0fh
-	mov 	dl,[hexchar + edx]
-	mov 	[edi], dl
-	inc 	di
-	inc		eax
-	cmp 	eax, 8
-	jne 	next_nible2	
-	
-	push 	2
-	push	0
+	push	offset e_lfanew
+	push	ecx
 	push 	0
+	push	dword ptr [hFileInput]
+	call 	ReadByte
+
+	push	ecx
+	push	offset e_lfanew
+	push	offset e_lfanew_str
 	push	dword ptr [hFileOutput]
-	call 	SetFilePointer
+	call	PrintHexDword
 	
-	xor 	eax, eax
-	push 	offset e_lfanew_str
+	
+	push	offset br
 	call 	lstrlen
 	
-	push 	0
 	push	0
-	push	eax
-	push	offset e_lfanew_str
-	push 	dword ptr [hFileOutput]
-	call 	WriteFile
-	
-	push 	0
 	push	0
-	push	7
-	push 	offset offs
-	push 	dword ptr [hFileOutput]
-	call 	WriteFile
-	
-	push 	0
-	push	0
-	push	8
-	push	offset address
+	push 	eax
+	push	offset br
 	push	dword ptr [hFileOutput]
 	call 	WriteFile
 	
-	push 	0
-	push	0
-	push	2
-	push	offset space
-	push	dword ptr [hFileOutput]
-	call 	WriteFile
 	
-	push 	0
-	push	0
-	push	6
-	push	offset val
-	push 	dword ptr [hFileOutput]
-	call 	WriteFile
+	;PE_Header
 	
-	push 	0
 	push	0
-	push	8
-	push	offset dw_buffer
-	push 	dword ptr [hFileOutput]
-	call 	WriteFile
-	
-	push 	0
 	push	0
-	push	2
+	push 	2
 	push	offset crlf
-	push 	dword ptr [hFileOutput]
+	push	dword ptr [hFileOutput]
 	call 	WriteFile
+	
+	push	0
+	push	0
+	push 	9
+	push	offset image_nt_header
+	push	dword ptr [hFileOutput]
+	call 	WriteFile
+	
+	push	0
+	push	0
+	push 	2
+	push	offset crlf
+	push	dword ptr [hFileOutput]
+	call 	WriteFile
+	
+	;signature
+	
+	mov 	ecx, dword ptr [e_lfanew]
+	mov		[start_pe_header], ecx
+	push	4
+	push	offset signature
+	push	ecx
+	push	0
+	push	dword ptr [hFileInput]
+	call 	ReadByte
+	
+	push 	ecx
+	push	offset signature
+	push	offset signature_str
+	push	dword ptr [hFileOutput]
+	call 	PrintHexDword
+	
+	;File header
+	
+	push	0
+	push	0
+	push 	14
+	push	offset fileHeader
+	push	dword ptr [hFileOutput]
+	call 	WriteFile
+	
+	mov 	ecx, dword ptr [start_pe_header]
+	add		ecx, 4
+	
+	;machine
+	
+	push	2
+	push	offset Machine
+	push	ecx
+	push	0
+	push	dword ptr [hFileInput]
+	call 	ReadByte
+	
+	push 	ecx
+	push	offset Machine
+	push	offset Machine_str
+	push	dword ptr [hFileOutput]
+	call 	PrintHexWord
+	
+	add 	ecx, 2
+	
+	;NumberOfSections
+	
+	push	2
+	push	offset NumberOfSections
+	push	ecx
+	push	0
+	push	dword ptr [hFileInput]
+	call 	ReadByte
+	
+	push 	ecx
+	push	offset NumberOfSections
+	push	offset NumberOfSections_str
+	push	dword ptr [hFileOutput]
+	call 	PrintHexWord
+	
+	add 	ecx, 2
+	
+	;TimeDateStamp
+	
+	push	4
+	push	offset TimeDateStamp
+	push	ecx
+	push	0
+	push	dword ptr [hFileInput]
+	call 	ReadByte
+	
+	push 	ecx
+	push	offset TimeDateStamp
+	push	offset TimeDateStamp_str
+	push	dword ptr [hFileOutput]
+	call 	PrintHexDword
+	
+	add 	ecx, 4
+	
+	;PointerToSymbols
+	
+	push	4
+	push	offset PointerToSymbols
+	push	ecx
+	push	0
+	push	dword ptr [hFileInput]
+	call 	ReadByte
+	
+	push 	ecx
+	push	offset PointerToSymbols
+	push	offset PointerToSymbols_str
+	push	dword ptr [hFileOutput]
+	call 	PrintHexDword
+	
+	add 	ecx, 4
+	
+	;NumberOfSymbols
+	
+	push	4
+	push	offset NumberOfSymbols
+	push	ecx
+	push	0
+	push	dword ptr [hFileInput]
+	call 	ReadByte
+	
+	push 	ecx
+	push	offset NumberOfSymbols
+	push	offset NumberOfSymbols_str
+	push	dword ptr [hFileOutput]
+	call 	PrintHexDword
+	
+	add 	ecx, 4
+	
+	;SizeOfOptionalHeader
+	
+	push	2
+	push	offset SizeOfOptionalHeader
+	push	ecx
+	push	0
+	push	dword ptr [hFileInput]
+	call 	ReadByte
+	
+	push 	ecx
+	push	offset SizeOfOptionalHeader
+	push	offset SizeOfOptionalHeader_str
+	push	dword ptr [hFileOutput]
+	call 	PrintHexWord
+	
+	add 	ecx, 2
+	
+	;Characteristics
+	
+	push	2
+	push	offset Characteristics
+	push	ecx
+	push	0
+	push	dword ptr [hFileInput]
+	call 	ReadByte
+	
+	push 	ecx
+	push	offset Characteristics
+	push	offset Characteristics_str
+	push	dword ptr [hFileOutput]
+	call 	PrintHexWord
+	
+	add 	ecx, 2
 	
 end start
 

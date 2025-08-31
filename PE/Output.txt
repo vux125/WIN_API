@@ -1,0 +1,129 @@
+DOS HEADER
+e_magic: Offset=00000000  Value=5A4D
+e_cblp: Offset=00000002  Value=0090
+e_cp: Offset=00000004  Value=0003
+e_crlc: Offset=00000006  Value=0000
+e_cparhdr: Offset=00000008  Value=0004
+e_minalloc: Offset=0000000A  Value=0000
+e_maxalloc: Offset=0000000C  Value=FFFF
+e_ss: Offset=0000000E  Value=0000
+e_sp: Offset=00000010  Value=00B8
+e_csum: Offset=00000012  Value=0000
+e_ip: Offset=00000014  Value=0000
+e_cs: Offset=00000016  Value=0000
+e_lfarlc: Offset=00000018  Value=0040
+e_ovno: Offset=0000001A  Value=0000
+e_res: Offset=0000001C  Value=0000
+Offset=0000001E  Value=0000
+Offset=00000020  Value=0000
+Offset=00000022  Value=0000
+e_oemid: Offset=00000024  Value=0000
+e_oeminfo: Offset=00000026  Value=0000
+e_res2: Offset=00000028  Value=0000
+Offset=0000002A  Value=0000
+Offset=0000002C  Value=0000
+Offset=0000002E  Value=0000
+Offset=00000030  Value=0000
+Offset=00000032  Value=0000
+Offset=00000034  Value=0000
+Offset=00000036  Value=0000
+Offset=00000038  Value=0000
+Offset=0000003A  Value=0000
+e_lfanew: Offset=0000003C  Value=00000100
+------------------------------------------------------------------
+PE HEADER
+signature: Offset=00000100  Value=00004550
+file_header:
+Machine: Offset=00000104  Value=8664
+NumberOfSections: Offset=00000106  Value=0007
+TimeDateStamp: Offset=00000108  Value=D3461862
+PointerToSymbols: Offset=0000010C  Value=00000000
+NumberOfSymbols: Offset=00000110  Value=00000000
+SizeOfOptionalHeader: Offset=00000114  Value=00F0
+Characteristics: Offset=00000116  Value=0022
+optional_header:
+Magic: Offset=00000118  Value=020B
+AddresOfEntryPoint: Offset=00000128  Value=00001300
+SectionAlignment: Offset=00000138  Value=00001000
+FileAlignment: Offset=0000013C  Value=00001000
+SizeOfImage: Offset=00000150  Value=0000F000
+SizeOfHeader: Offset=00000154  Value=00001000
+------------------------------------------------------------------
+SECTION TABLE
+1 
+Name:  .text
+Virtual Size: Offset=00000210  Value=00005D60
+Virtual Address: Offset=00000214  Value=00001000
+SizeOfRawData: Offset=00000218  Value=00006000
+PointerToRawData: Offset=0000021C  Value=00001000
+PointerToRelocations: Offset=00000220  Value=00000000
+PointerToLinenumbers: Offset=00000224  Value=00000000
+NumberOfRelocations: Offset=00000228  Value=0000
+NUmberOfLinenumbers: Offset=0000022A  Value=0000
+Characteristics: Offset=0000022C  Value=60000020
+2 
+Name:  fothk
+Virtual Size: Offset=00000238  Value=00001000
+Virtual Address: Offset=0000023C  Value=00007000
+SizeOfRawData: Offset=00000240  Value=00001000
+PointerToRawData: Offset=00000244  Value=00007000
+PointerToRelocations: Offset=00000248  Value=00000000
+PointerToLinenumbers: Offset=0000024C  Value=00000000
+NumberOfRelocations: Offset=00000250  Value=0000
+NUmberOfLinenumbers: Offset=00000252  Value=0000
+Characteristics: Offset=00000254  Value=60000020
+3 
+Name:  .rdata
+Virtual Size: Offset=00000260  Value=000029FE
+Virtual Address: Offset=00000264  Value=00008000
+SizeOfRawData: Offset=00000268  Value=00003000
+PointerToRawData: Offset=0000026C  Value=00008000
+PointerToRelocations: Offset=00000270  Value=00000000
+PointerToLinenumbers: Offset=00000274  Value=00000000
+NumberOfRelocations: Offset=00000278  Value=0000
+NUmberOfLinenumbers: Offset=0000027A  Value=0000
+Characteristics: Offset=0000027C  Value=40000040
+4 
+Name:  .data
+Virtual Size: Offset=00000288  Value=00000830
+Virtual Address: Offset=0000028C  Value=0000B000
+SizeOfRawData: Offset=00000290  Value=00001000
+PointerToRawData: Offset=00000294  Value=0000B000
+PointerToRelocations: Offset=00000298  Value=00000000
+PointerToLinenumbers: Offset=0000029C  Value=00000000
+NumberOfRelocations: Offset=000002A0  Value=0000
+NUmberOfLinenumbers: Offset=000002A2  Value=0000
+Characteristics: Offset=000002A4  Value=C0000040
+5 
+Name:  .pdata
+Virtual Size: Offset=000002B0  Value=000003D8
+Virtual Address: Offset=000002B4  Value=0000C000
+SizeOfRawData: Offset=000002B8  Value=00001000
+PointerToRawData: Offset=000002BC  Value=0000C000
+PointerToRelocations: Offset=000002C0  Value=00000000
+PointerToLinenumbers: Offset=000002C4  Value=00000000
+NumberOfRelocations: Offset=000002C8  Value=0000
+NUmberOfLinenumbers: Offset=000002CA  Value=0000
+Characteristics: Offset=000002CC  Value=40000040
+6 
+Name:  .rsrc
+Virtual Size: Offset=000002D8  Value=00000840
+Virtual Address: Offset=000002DC  Value=0000D000
+SizeOfRawData: Offset=000002E0  Value=00001000
+PointerToRawData: Offset=000002E4  Value=0000D000
+PointerToRelocations: Offset=000002E8  Value=00000000
+PointerToLinenumbers: Offset=000002EC  Value=00000000
+NumberOfRelocations: Offset=000002F0  Value=0000
+NUmberOfLinenumbers: Offset=000002F2  Value=0000
+Characteristics: Offset=000002F4  Value=40000040
+7 
+Name:  .reloc
+Virtual Size: Offset=00000300  Value=0000010C
+Virtual Address: Offset=00000304  Value=0000E000
+SizeOfRawData: Offset=00000308  Value=00001000
+PointerToRawData: Offset=0000030C  Value=0000E000
+PointerToRelocations: Offset=00000310  Value=00000000
+PointerToLinenumbers: Offset=00000314  Value=00000000
+NumberOfRelocations: Offset=00000318  Value=0000
+NUmberOfLinenumbers: Offset=0000031A  Value=0000
+Characteristics: Offset=0000031C  Value=42000040

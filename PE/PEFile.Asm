@@ -17,7 +17,7 @@ hFileInput dd ?
 hFileOutput dd ?
 
 hexchar db "0123456789ABCDEF", 0
-br db "------------------------------------------------------------------", 0, 0dh, 0ah
+br db "------------------------------------------------------------------", 0
 crlf db 0dh, 0ah
 space db 20h,20h
 w_buffer db 5 dup(0)
@@ -71,8 +71,10 @@ e_lfanew dd ?
 
 image_nt_header db "PE HEADER", 0
 start_pe_header dd ?
+
 signature_str db "signature: ", 0
 signature dd ?
+
 fileHeader db "file_header:", 0dh, 0ah
 Machine_str db "Machine: ", 0
 Machine dw ?
@@ -89,11 +91,48 @@ SizeOfOptionalHeader dw ?
 Characteristics_str db "Characteristics: ", 0
 Characteristics dw ? 
 
+optionalHeader db "optional_header:", 0dh, 0ah
+
+Magic_str db "Magic: ", 0
+Magic dw ?
+AddressOfEntryPoint_str db "AddresOfEntryPoint: ", 0
+AddressOfEntryPoint dd ?
+ImageBase_str db "ImageBase: ", 0
+ImageBase dq ? 
+SectionAlignment_str db "SectionAlignment: ", 0
+SectionAlignment dd ?
+FileAlignment_str db "FileAlignment: ", 0 
+FileAlignment dd ?
+SizeOfImage_str db "SizeOfImage: ", 0
+SizeOfImage dd ?
+SizeOfHeader_str db "SizeOfHeader: ", 0
+SizeOfHeader dd ?
+dataDicectory db "Data Dicectory: ", 0
+
+sectionTable db "SECTION TABLE", 0dh, 0ah
+SectionTable db 40 dup(0) 
+
+tmp_b db ?
+tmp_w dw ?
+tmp_d dd ?
+tmp_q dq ?
+stt db "1", 0
+
+Name_section db "Name: ", 0
+VirtualSize_str db "Virtual Size: ", 0
+VirtualAddress_str db "Virtual Address: ", 0
+SizeOfRawData_str db "SizeOfRawData: ", 0
+PointerToRawData_str db "PointerToRawData: ", 0
+PointerToRelocations_str db "PointerToRelocations: ", 0
+PointerToLinenumbers_str db "PointerToLinenumbers: ", 0
+NumberOfRelocations_str  db "NumberOfRelocations: ",0
+NumberOfLinenumbers_str db "NUmberOfLinenumbers: ",0
+Characteristics_str_st db "Characteristics: ",0
+ 
 
 .code
 
 PrintHexWord PROC uses eax ebx ecx edx,hFile:dword, titl:dword, w:dword, ost:dword
-
 	mov 	ebx, w
 	mov 	ax, word ptr [ebx]
 	mov 	ecx, 4
@@ -270,6 +309,224 @@ next_nible2:
 	ret
 
 PrintHexDword endp
+
+
+SectionTables PROC uses eax ebx
+	
+	push	40
+	push	offset SectionTable
+	push	ecx
+	push	0
+	push	dword ptr [hFileInput]
+	call 	ReadByte
+	
+	push 	ecx
+	
+	; lay ten section
+
+	mov 	eax, offset SectionTable
+	mov 	edi, offset tmp_q
+	mov		esi, dword ptr [eax]
+	mov 	[edi], esi
+	mov		esi, dword ptr [eax + 4]
+	mov 	[edi+4], esi	
+	
+	xor		edx, edx 
+	
+	push 	0
+	push	0
+	push	2
+	push	offset stt
+	push	dword ptr [hFileOutput]
+	call 	WriteFile
+	
+	push 	0
+	push	0
+	push	2
+	push	offset crlf
+	push 	dword ptr [hFileOutput]
+	call 	WriteFile
+	
+	push 	0
+	push	0
+	push	7
+	push	offset Name_section
+	push	dword ptr [hFileOutput]
+	call 	WriteFile
+	
+	
+	
+	push	offset tmp_q
+	call 	lstrlen
+	
+	push 	0
+	push	0
+	push	eax
+	push	offset tmp_q
+	push	dword ptr [hFileOutput]
+	call 	WriteFile
+	
+	push 	0
+	push	0
+	push	2
+	push	offset crlf
+	push 	dword ptr [hFileOutput]
+	call 	WriteFile
+	
+	;Virtual size
+	pop 	ecx
+	add		ecx, 8
+	
+	push	4
+	push	offset tmp_d
+	push	ecx
+	push	0
+	push	dword ptr [hFileInput]
+	call 	ReadByte
+	
+	push	ecx
+	push	offset tmp_d
+	push	offset VirtualSize_str
+	push	dword ptr [hFileOutput]
+	call	PrintHexDword
+	
+	;VirtualAddress
+	add 	ecx, 4
+	
+	push	4
+	push	offset tmp_d
+	push	ecx
+	push	0
+	push	dword ptr [hFileInput]
+	call 	ReadByte
+	
+	push	ecx
+	push	offset tmp_d
+	push	offset VirtualAddress_str
+	push	dword ptr [hFileOutput]
+	call	PrintHexDword
+	
+	;SizeOfRawData
+	
+	add 	ecx, 4
+	
+	push	4
+	push	offset tmp_d
+	push	ecx
+	push	0
+	push	dword ptr [hFileInput]
+	call 	ReadByte
+	
+	push	ecx
+	push	offset tmp_d
+	push	offset SizeOfRawData_str
+	push	dword ptr [hFileOutput]
+	call	PrintHexDword
+	
+	;PointerToRawData
+	add 	ecx, 4
+	
+	push	4
+	push	offset tmp_d
+	push	ecx
+	push	0
+	push	dword ptr [hFileInput]
+	call 	ReadByte
+	
+	push	ecx
+	push	offset tmp_d
+	push	offset PointerToRawData_str
+	push	dword ptr [hFileOutput]
+	call	PrintHexDword
+	
+	
+	;PointerToRelocations
+	add 	ecx, 4
+	
+	push	4
+	push	offset tmp_d
+	push	ecx
+	push	0
+	push	dword ptr [hFileInput]
+	call 	ReadByte
+	
+	push	ecx
+	push	offset tmp_d
+	push	offset PointerToRelocations_str
+	push	dword ptr [hFileOutput]
+	call	PrintHexDword
+	
+	;PointerToLinenumbers
+	add 	ecx, 4
+	
+	push	4
+	push	offset tmp_d
+	push	ecx
+	push	0
+	push	dword ptr [hFileInput]
+	call 	ReadByte
+	
+	push	ecx
+	push	offset tmp_d
+	push	offset PointerToLinenumbers_str
+	push	dword ptr [hFileOutput]
+	call	PrintHexDword
+	
+	;NumberOfRelocations
+	add 	ecx, 4
+	
+	push	2
+	push	offset tmp_w
+	push	ecx
+	push	0
+	push	dword ptr [hFileInput]
+	call 	ReadByte
+	
+	push	ecx
+	push	offset tmp_w
+	push	offset NumberOfRelocations_str
+	push	dword ptr [hFileOutput]
+	call	PrintHexWord
+	
+	
+	;NumberOfLinenumbers
+	add 	ecx, 2
+	
+	push	2
+	push	offset tmp_w
+	push	ecx
+	push	0
+	push	dword ptr [hFileInput]
+	call 	ReadByte
+	
+	push	ecx
+	push	offset tmp_w
+	push	offset NumberOfLinenumbers_str
+	push	dword ptr [hFileOutput]
+	call	PrintHexWord
+	
+	
+	;Characteristics
+	add 	ecx, 2
+	
+	push	4
+	push	offset tmp_d
+	push	ecx
+	push	0
+	push	dword ptr [hFileInput]
+	call 	ReadByte
+	
+	push	ecx
+	push	offset tmp_d
+	push	offset Characteristics_str
+	push	dword ptr [hFileOutput]
+	call	PrintHexDword
+	
+	add 	ecx, 4
+	
+	ret
+
+SectionTables endp
 ;----------------------------------------------------------
 start:	
 
@@ -688,6 +945,7 @@ e_res2_arr:
 	push	dword ptr [hFileOutput]
 	call	PrintHexDword
 	
+	;----------------------------------------------------------------------	
 	
 	push	offset br
 	call 	lstrlen
@@ -723,10 +981,11 @@ e_res2_arr:
 	push	dword ptr [hFileOutput]
 	call 	WriteFile
 	
-	;signature
+	;signature 4-byte
 	
 	mov 	ecx, dword ptr [e_lfanew]
 	mov		[start_pe_header], ecx
+	
 	push	4
 	push	offset signature
 	push	ecx
@@ -740,7 +999,7 @@ e_res2_arr:
 	push	dword ptr [hFileOutput]
 	call 	PrintHexDword
 	
-	;File header
+	;File header 20-byte
 	
 	push	0
 	push	0
@@ -869,8 +1128,173 @@ e_res2_arr:
 	push	dword ptr [hFileOutput]
 	call 	PrintHexWord
 	
-	add 	ecx, 2
+	;Optional header 224-byte (96-byte + 128-byte)
 	
+	push 	0
+	push 	0
+	push	18
+	push 	offset optionalHeader
+	push 	dword ptr [hFileOutput]
+	call 	WriteFile
+	
+	mov 	ecx, dword ptr [start_pe_header]
+	add		ecx, 24
+	
+	;Magic
+	
+	push	2
+	push	offset Magic
+	push	ecx
+	push	0
+	push	dword ptr [hFileInput]
+	call 	ReadByte
+	
+	push 	ecx
+	push	offset Magic
+	push	offset Magic_str
+	push	dword ptr [hFileOutput]
+	call 	PrintHexWord
+	
+	add		ecx, 16
+	
+	;AddressEntryPoint
+	
+	push	4
+	push	offset AddressOfEntryPoint
+	push	ecx
+	push	0
+	push	dword ptr [hFileInput]
+	call 	ReadByte
+	
+	push 	ecx
+	push	offset AddressOfEntryPoint
+	push	offset AddressOfEntryPoint_str
+	push	dword ptr [hFileOutput]
+	call 	PrintHexDword
+	
+	add		ecx, 8
+	;ImageBase
+	
+	push	8
+	push	offset ImageBase
+	push	ecx
+	push	0
+	push	dword ptr [hFileInput]
+	call 	ReadByte 
+	
+	
+	add 	ecx, 8
+	;SectionAlignment
+
+	push	4
+	push	offset SectionAlignment
+	push	ecx
+	push	0
+	push	dword ptr [hFileInput]
+	call 	ReadByte
+	
+	push 	ecx
+	push	offset SectionAlignment
+	push	offset SectionAlignment_str
+	push	dword ptr [hFileOutput]
+	call 	PrintHexDword
+	
+	add		ecx, 4
+	;FileAlignment
+	
+	push	4
+	push	offset FileAlignment
+	push	ecx
+	push	0
+	push	dword ptr [hFileInput]
+	call 	ReadByte
+	
+	push 	ecx
+	push	offset FileAlignment
+	push	offset FileAlignment_str
+	push	dword ptr [hFileOutput]
+	call 	PrintHexDword
+	
+	add		ecx, 20
+	
+	;SizeOfImage
+	
+	push	4
+	push	offset SizeOfImage
+	push	ecx
+	push	0
+	push	dword ptr [hFileInput]
+	call 	ReadByte
+	
+	push 	ecx
+	push	offset SizeOfImage
+	push	offset SizeOfImage_str
+	push	dword ptr [hFileOutput]
+	call 	PrintHexDword
+	
+	add 	ecx, 4
+	
+	;SizeOfHeader
+	
+	push	4
+	push	offset SizeOfHeader
+	push	ecx
+	push	0
+	push	dword ptr [hFileInput]
+	call 	ReadByte
+	
+	push 	ecx
+	push	offset SizeOfHeader
+	push	offset SizeOfHeader_str
+	push	dword ptr [hFileOutput]
+	call 	PrintHexDword
+	
+	;-----------------------------------------------------------------
+	;Section table
+	
+	push	offset br
+	call 	lstrlen
+	
+	push	0
+	push	0
+	push 	eax
+	push	offset br
+	push	dword ptr [hFileOutput]
+	call 	WriteFile
+	
+	push	0
+	push	0
+	push 	2
+	push	offset crlf
+	push	dword ptr [hFileOutput]
+	call 	WriteFile
+		
+	push	0
+	push	0
+	push	15
+	push	offset sectionTable
+	push 	dword ptr [hFileOutput]
+	call	WriteFile 	
+	
+	;lay dia chi 
+	
+	mov 	ecx, dword ptr [start_pe_header]
+	add		ecx, 24
+	add		cx, word ptr [SizeOfOptionalHeader]
+	
+	xor 	eax, eax
+	
+	mov 	eax, dword ptr [stt]
+	mov 	ebx, dword ptr [NumberOfSections]
+	add		ebx, '0'
+	
+	sectionintable:
+		call	SectionTables
+		inc 	eax
+		mov 	[stt], al
+		cmp		al, bl
+		jbe		sectionintable
+
 end start
 
 

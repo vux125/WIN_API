@@ -107,7 +107,17 @@ SizeOfImage_str db "SizeOfImage: ", 0
 SizeOfImage dd ?
 SizeOfHeader_str db "SizeOfHeader: ", 0
 SizeOfHeader dd ?
-dataDicectory db "Data Dicectory: ", 0
+dataDirectory_str db "Data Directory: ", 0dh, 0ah
+dataDirectory dd 32 dup(0)
+
+ExportTable_str db "ExportTable: (RVA-Size)",0dh, 0ah
+ExportTableRVA       dd ?
+ExportTableSize      dd ?
+
+ImportTable_str db "ImportTable: (RVA-Size)", 0dh, 0ah
+ImportTableRVA       dd ?
+ImportTableSize      dd ?
+
 
 sectionTable db "SECTION TABLE", 0dh, 0ah
 SectionTable db 40 dup(0) 
@@ -1249,6 +1259,87 @@ e_res2_arr:
 	push	dword ptr [hFileOutput]
 	call 	PrintHexDword
 	
+	
+	;DataDirectory
+	mov 	ecx, dword ptr [start_pe_header]
+	add 	ecx, 24
+	add		cx, word ptr [SizeOfOptionalHeader] 
+	sub		ecx, 128
+	
+	push	128
+	push	offset dataDirectory
+	push 	ecx
+	push	0
+	push	dword ptr [hFileInput]
+	call 	ReadByte
+	
+	push	ecx
+	
+	push	0
+	push	0
+	push	18
+	push	offset dataDirectory_str
+	push	dword ptr [hFileOutput]
+	call 	WriteFile
+	
+	push	0
+	push	0
+	push	25
+	push	offset ExportTable_str
+	push	dword ptr [hFileOutput]
+	call 	WriteFile
+	
+	xor 	ecx, ecx
+	pop 	ecx
+	
+	mov		eax, offset dataDirectory
+	
+	push	ecx
+	push	eax
+	push	0
+	push	dword ptr [hFileOutput]	
+	call 	PrintHexDword
+	
+	add		eax, 4
+	add		ecx, 4
+	
+	push	ecx
+	push	eax
+	push	0
+	push	dword ptr [hFileOutput]	
+	call 	PrintHexDword
+	
+	
+	add		ecx, 4
+	push	ecx
+	
+	push	0
+	push	0
+	push	25
+	push	offset ImportTable_str
+	push	dword ptr [hFileOutput]
+	call 	WriteFile
+	
+	xor		ecx, ecx
+	pop 	ecx
+	
+	mov		eax, offset dataDirectory
+	add		eax, 8
+	
+	push	ecx
+	push	eax
+	push	0
+	push	dword ptr [hFileOutput]	
+	call 	PrintHexDword
+	
+	add		ecx, 4
+	add		eax, 4
+	
+	push	ecx
+	push	eax
+	push	0
+	push	dword ptr [hFileOutput]	
+	call 	PrintHexDword
 	;-----------------------------------------------------------------
 	;Section table
 	
@@ -1294,13 +1385,4 @@ e_res2_arr:
 		mov 	[stt], al
 		cmp		al, bl
 		jbe		sectionintable
-
 end start
-
-
-
-
-
-
-
-

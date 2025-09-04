@@ -48,6 +48,13 @@ SectionAlignment: Offset=00000138  Value=00001000
 FileAlignment: Offset=0000013C  Value=00001000
 SizeOfImage: Offset=00000150  Value=0000F000
 SizeOfHeader: Offset=00000154  Value=00001000
+Data Directory: 
+ExportTable: (RVA-Size)
+Offset=00000188  Value=00000000
+Offset=0000018C  Value=00000000
+ImportTable: (RVA-Size)
+Offset=00000190  Value=00009848
+Offset=00000194  Value=0000021C
 ------------------------------------------------------------------
 SECTION TABLE
 1 

@@ -119,6 +119,7 @@ ImportTableRVA       dd ?
 ImportTableSize      dd ?
 
 
+
 sectionTable db "SECTION TABLE", 0dh, 0ah
 SectionTable db 40 dup(0) 
 
@@ -138,7 +139,13 @@ PointerToLinenumbers_str db "PointerToLinenumbers: ", 0
 NumberOfRelocations_str  db "NumberOfRelocations: ",0
 NumberOfLinenumbers_str db "NUmberOfLinenumbers: ",0
 Characteristics_str_st db "Characteristics: ",0
- 
+VirtualAddress_section dd 16 dup(?)
+PointerToRawData_section dd 16 dup(?)
+
+FileOffsetImport dd ? 
+FileOffsetExport dd ? 
+
+_IMPORT_DESCRIPTOR dd 5 dup(?)
 
 .code
 
@@ -321,7 +328,7 @@ next_nible2:
 PrintHexDword endp
 
 
-SectionTables PROC uses eax ebx
+SectionTables PROC uses eax ebx edx edi esi, n:dword
 	
 	push	40
 	push	offset SectionTable
@@ -416,6 +423,11 @@ SectionTables PROC uses eax ebx
 	push	dword ptr [hFileOutput]
 	call	PrintHexDword
 	
+	mov		edx, offset VirtualAddress_section
+	add		edx, n
+	mov 	edi, dword ptr [tmp_d]
+	mov 	[edx], edi
+	
 	;SizeOfRawData
 	
 	add 	ecx, 4
@@ -449,6 +461,10 @@ SectionTables PROC uses eax ebx
 	push	dword ptr [hFileOutput]
 	call	PrintHexDword
 	
+	mov		edx, offset PointerToRawData_section
+	add		edx, n
+	mov 	edi, dword ptr [tmp_d]
+	mov 	[edx], edi
 	
 	;PointerToRelocations
 	add 	ecx, 4
@@ -1294,6 +1310,10 @@ e_res2_arr:
 	
 	mov		eax, offset dataDirectory
 	
+	mov		edx, offset ExportTableRVA
+	mov		esi, dword ptr [eax]
+	mov		[edx],esi
+	
 	push	ecx
 	push	eax
 	push	0
@@ -1326,6 +1346,10 @@ e_res2_arr:
 	mov		eax, offset dataDirectory
 	add		eax, 8
 	
+	mov		edx, offset ImportTableRVA
+	mov		esi, dword ptr [eax]
+	mov		[edx], esi
+	
 	push	ecx
 	push	eax
 	push	0
@@ -1340,6 +1364,8 @@ e_res2_arr:
 	push	0
 	push	dword ptr [hFileOutput]	
 	call 	PrintHexDword
+	
+	
 	;-----------------------------------------------------------------
 	;Section table
 	
@@ -1375,14 +1401,115 @@ e_res2_arr:
 	
 	xor 	eax, eax
 	
-	mov 	eax, dword ptr [stt]
+	mov 	al, byte ptr [stt]
 	mov 	ebx, dword ptr [NumberOfSections]
 	add		ebx, '0'
 	
-	sectionintable:
-		call	SectionTables
-		inc 	eax
-		mov 	[stt], al
-		cmp		al, bl
-		jbe		sectionintable
+	xor		esi, esi
+	mov 	esi, 4
+sectionintable:
+	
+	push	eax
+	dec		eax
+	sub		eax, '0'
+	mul		esi
+	push	eax
+	call	SectionTables
+	pop		eax
+	inc 	eax
+	mov 	[stt], al
+	cmp		al, bl
+	jbe		sectionintable
+		
+;co 2 mang la VirtualAddress_section[] va PointerToRawData[] cung ExportTableRVA va ImportTableRAV
+;Tinh file offset = ImportTableRVA - VirtualAddress_section + PointerToRawData
+
+;tim section chua exporttable
+	mov 	eax, 1
+	mov 	edx, dword ptr [ExportTableRVA]
+tim_section:
+	push	edx
+	push	eax
+	mul		esi
+	mov 	ebx, offset VirtualAddress_section
+	add		ebx, eax
+	pop		eax
+	pop		edx
+	inc 	eax
+	cmp		[ebx], edx
+	jbe		tim_section
+	
+	sub		ebx, 4
+	sub		edx, [ebx]
+	push	edx
+	mov 	edi, offset PointerToRawData_section
+	sub 	eax, 2
+	mul		esi
+	add		edi, eax
+	pop 	edx
+	add		edx, dword ptr [edi]
+	
+	mov		eax, offset FileOffsetExport
+	mov		[eax], edx
+
+
+;tim section chua ImportTable
+	
+
+	mov 	eax, 1
+	mov 	edx, dword ptr [ImportTableRVA]
+find_section:
+	push	edx
+	push	eax
+	mul		esi
+	mov 	ebx, offset VirtualAddress_section
+	add		ebx, eax
+	pop		eax
+	pop		edx
+	inc 	eax
+	cmp		[ebx], edx
+	jbe		find_section
+	
+	sub		ebx, 4
+	sub		edx, [ebx]
+	push	edx
+	mov 	edi, offset PointerToRawData_section
+	sub 	eax, 2
+	mul		esi
+	add		edi, eax
+	pop 	edx
+	add		edx, dword ptr [edi]
+	
+	mov		eax, offset FileOffsetImport
+	mov		[eax], edx
+	
+	push	0
+	push	0
+	push	dword ptr [FileOffsetImport]
+	push	dword ptr [hFileInput]
+	call	SetFilePointer
+	
+read_descriptor:
+	
+	push 	0
+	push	0
+	push	20
+	push	offset _IMPORT_DESCRIPTOR
+	push	dword ptr [hFileInput]
+	call 	ReadFile
+	
+	xor 	ecx, ecx
+	
+	mov		ecx, 5
+	mov		ebx, offset _IMPORT_DESCRIPTOR
+check_end_descriptor:
+	
+	mov		eax, [ebx]
+	cmp		eax, 0
+	jne		read_descriptor
+	add		ebx, 4
+	loop	check_end_descriptor
+
+
+
 end start

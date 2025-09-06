@@ -36,6 +36,6 @@
 
 - Dùng các hàm API: ReadFile, CreateFile, WriteFile, SetFilePointer, ...
 
-- Thực hiện đọc thông tin các phần: DOS Header, PE Header, Section Table. Ghi vào file output.txt
+- Thực hiện đọc thông tin các phần: DOS Header, PE Header, Section Table, IAT, ... ghi vào file output.txt
 
 - [Xem code chi tiết](https://github.com/vux125/WIN_API/blob/main/PE/PEFile.Asm)

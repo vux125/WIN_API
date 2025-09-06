@@ -144,7 +144,21 @@ PointerToRawData_section dd 16 dup(?)
 
 FileOffsetImport dd ? 
 FileOffsetExport dd ? 
+eat_str db "EXPORT ADDRESS TABLE", 0dh, 0ah
 iat_str db "IMPORT ADDRESS TABLE", 0dh, 0ah
+
+notification db "Don't existing", 0dh, 0ah
+
+_EXPORT_DIRECTORY dd 10 dup(?)
+nName_str db "nName: ", 0
+nBase_str db "nBase: ", 0
+NumberOfFunction_str db "NumberOfFunction: ", 0
+NumberOfNames_str db "NumberOfNames: ", 0
+EAT_str db "Export Address Table: ", 0dh, 0ah
+ENT_str db "Export Name Table: ", 0dh, 0ah
+EOT_str db "Export Ordinals Table: ", 0dh, 0ah
+
+Address_str db "Address: ", 0
 
 _IMPORT_DESCRIPTOR dd 5 dup(?)
 name_str db "Module name: ", 0
@@ -561,6 +575,63 @@ SectionTables PROC uses eax ebx edx edi esi, n:dword
 	ret
 
 SectionTables endp
+
+HexDword PROC uses eax ecx ebx edx edi esi, d:dword, hFileIn:dword, hFileOut:dword, tit:dword
+	
+	push	0
+	push	0
+	push	d
+	push	hFileIn
+	call	SetFilePointer
+	
+	push	0
+	push	0
+	push	4
+	push	offset tmp_d
+	push	hFileIn
+	call	ReadFile
+	
+	mov 	ecx, offset tmp_d
+	mov 	ebx, dword ptr [ecx]
+	mov		eax, 0
+	lea		edi, offset dw_buffer
+	
+next_nible:
+	xor 	edx,edx
+	rol		ebx, 4
+	mov		dl, bl
+	and 	dl, 0fh
+	mov		dl, [hexchar + edx]
+	mov 	[edi], dl
+	inc		di
+	inc		eax
+	cmp 	eax, 8
+	jne 	next_nible
+	
+	push	tit
+	call	lstrlen
+	
+	push 	0
+	push	eax
+	push	tit
+	push	hFileOut
+	call	WriteFile
+	
+	push 	0
+	push	4
+	push	offset dw_buffer
+	push	hFileOut
+	call	WriteFile
+	
+	push 	0
+	push	2
+	push	offset crlf
+	push	hFileOut
+	call	WriteFile
+	
+	ret
+
+HexDword endp
 ;----------------------------------------------------------
 start:	
 
@@ -1454,7 +1525,7 @@ sectionintable:
 	push	0
 	push	0
 	push	22
-	push	offset iat_str
+	push	offset eat_str
 	push 	dword ptr [hFileOutput]
 	call	WriteFile 	
 
@@ -1462,6 +1533,9 @@ sectionintable:
 
 	mov 	eax, 1
 	mov 	edx, dword ptr [ExportTableRVA]
+	
+	cmp 	edx, 0
+	jz		no_export
 tim_section:
 	push	edx
 	push	eax
@@ -1486,11 +1560,163 @@ tim_section:
 	
 	mov		eax, offset FileOffsetExport
 	mov		[eax], edx
+	jmp		continue
+no_export:
+	push	0
+	push	0
+	push	16
+	push	offset notification 
+	push	dword ptr [hFileOutput]
+	call	WriteFile
+	jmp		_label
+continue:
+	
+	mov		ecx, dword ptr [FileOffsetExport]
+	
+	
+	push	0
+	push	0
+	push	ecx
+	push	dword ptr [hFileInput]
+	call	SetFilePointer
+	
+	push	0
+	push	0
+	push	40
+	push	offset _EXPORT_DIRECTORY
+	push	dword ptr [hFileInput]
+	call	ReadFile
+	
+	mov 	ebx, offset _EXPORT_DIRECTORY
+	add		ebx, 12
+	push	ebx
+	
+	push	0
+	push	0
+	push	dword ptr [ebx]
+	push	dword ptr [hFileInput]
+	call	SetFilePointer
+	
+	push	0
+	push	0
+	push	256
+	push	offset name1
+	push	dword ptr [hFileInput]
+	call	ReadFile
+	
+	push 	0
+	push	8
+	push	offset nName_str
+	push	dword ptr [hFileOutput]
+	call	WriteFile
+	
+	push	offset name1
+	call	lstrlen
+	
+	push 	0
+	push	eax
+	push	offset name1
+	push	dword ptr [hFileOutput]
+	call	WriteFile
+	
+	push 	0
+	push	2
+	push	offset crlf
+	push	dword ptr [hFileOutput]
+	call	WriteFile
+	
+	pop		ebx
+	add		ebx, 4
+	
+	push	offset nBase_str
+	push	dword ptr [hFileOutput]
+	push	dword ptr [hFileInput]
+	push	dword ptr [ebx]
+	call	HexDword
+	
+	add		ebx, 4
+	
+	push	offset NumberOfFunction_str
+	push	dword ptr [hFileOutput]
+	push	dword ptr [hFileInput]
+	push	dword ptr [ebx]
+	call	HexDword
+	
+	mov		eax, dword ptr [tmp_d]
+	push	eax
+	
+	add 	ebx, 4
+	
+	push	offset NumberOfNames_str
+	push	dword ptr [hFileOutput]
+	push	dword ptr [hFileInput]
+	push	dword ptr [ebx]
+	call	HexDword
+	
+	add		ebx, 4
+	
+	push	0
+	push	0
+	push	dword ptr [ebx]
+	push	dword ptr [hFileInput]
+	call	SetFilePointer
+	
+	push	0
+	push	0
+	push	4
+	push	offset tmp_d
+	push	dword ptr [hFileInput]
+	call	ReadFile
+	
+	pop		eax
+	
+	xor		ecx, ecx
+	mov 	ecx, 0
+	mov 	ebx, dword ptr [tmp_d]
+_label1:
 
-
+	push	offset Address_str
+	push	dword ptr [hFileOutput]
+	push	dword ptr [hFileInput]
+	push	ebx
+	call	HexDword
+	
+	inc		ecx
+	add		ebx, 4
+	
+	cmp		ecx, eax
+	jb		_label1
+	
+	
+	
+;tim section chua ImportTable	
+;----------------------------------------------------------------------------------------------
+_label:
+	push	offset br
+	call 	lstrlen
+	
+	push	0
+	push	0
+	push 	eax
+	push	offset br
+	push	dword ptr [hFileOutput]
+	call 	WriteFile
+	
+	push	0
+	push	0
+	push 	2
+	push	offset crlf
+	push	dword ptr [hFileOutput]
+	call 	WriteFile
+		
+	push	0
+	push	0
+	push	22
+	push	offset iat_str
+	push 	dword ptr [hFileOutput]
+	call	WriteFile 		
 ;tim section chua ImportTable
 	
-
 	mov 	eax, 1
 	mov 	edx, dword ptr [ImportTableRVA]
 find_section:
@@ -1718,11 +1944,3 @@ tobyte:
 	loop	check_end_descriptor
 
 end start
-
-
-
-
-
-
-
-

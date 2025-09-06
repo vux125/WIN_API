@@ -144,8 +144,17 @@ PointerToRawData_section dd 16 dup(?)
 
 FileOffsetImport dd ? 
 FileOffsetExport dd ? 
+iat_str db "IMPORT ADDRESS TABLE", 0dh, 0ah
 
 _IMPORT_DESCRIPTOR dd 5 dup(?)
+name_str db "Module name: ", 0
+name1 db 256 dup(?)
+
+image_thunk dd ?
+
+hint_str db "Hint: ",0
+hint dw ?
+name_f_str db "Name_function: ", 0
 
 .code
 
@@ -326,7 +335,6 @@ next_nible2:
 	ret
 
 PrintHexDword endp
-
 
 SectionTables PROC uses eax ebx edx edi esi, n:dword
 	
@@ -1425,6 +1433,33 @@ sectionintable:
 ;Tinh file offset = ImportTableRVA - VirtualAddress_section + PointerToRawData
 
 ;tim section chua exporttable
+;----------------------------------------------------------------------------------------------
+	push	offset br
+	call 	lstrlen
+	
+	push	0
+	push	0
+	push 	eax
+	push	offset br
+	push	dword ptr [hFileOutput]
+	call 	WriteFile
+	
+	push	0
+	push	0
+	push 	2
+	push	offset crlf
+	push	dword ptr [hFileOutput]
+	call 	WriteFile
+		
+	push	0
+	push	0
+	push	22
+	push	offset iat_str
+	push 	dword ptr [hFileOutput]
+	call	WriteFile 	
+
+;------------------------------------------------------------------------------------------------
+
 	mov 	eax, 1
 	mov 	edx, dword ptr [ExportTableRVA]
 tim_section:
@@ -1483,13 +1518,17 @@ find_section:
 	mov		eax, offset FileOffsetImport
 	mov		[eax], edx
 	
-	push	0
-	push	0
-	push	dword ptr [FileOffsetImport]
-	push	dword ptr [hFileInput]
-	call	SetFilePointer
+	mov		ebx, dword ptr [FileOffsetImport]
+
 	
 read_descriptor:
+	push 	ebx
+	
+	push	0
+	push	0
+	push	ebx
+	push	dword ptr [hFileInput]
+	call	SetFilePointer
 	
 	push 	0
 	push	0
@@ -1502,14 +1541,188 @@ read_descriptor:
 	
 	mov		ecx, 5
 	mov		ebx, offset _IMPORT_DESCRIPTOR
-check_end_descriptor:
 	
+	jmp 	check_end_descriptor
+	
+read_iat:
+	mov		ebx, offset _IMPORT_DESCRIPTOR
+	add		ebx, 12
+	
+	push	0
+	push	0
+	push	dword ptr [ebx]
+	push	dword ptr [hFileInput]
+	call 	SetFilePointer
+	
+	;mov 	offset name1
+	
+	push	0
+	push	0
+	push	256
+	push	offset name1
+	push	dword ptr [hFileInput]
+	call	ReadFile
+	
+	push 	offset name_str
+	call 	lstrlen
+	
+	push 	0
+	push	0
+	push	eax
+	push	offset name_str
+	push	dword ptr [hFileOutput]
+	call 	WriteFile
+	
+	push 	offset name1
+	call 	lstrlen
+	
+	push	0
+	push	0
+	push	eax
+	push 	offset name1
+	push	dword ptr [hFileOutput]
+	call 	WriteFile
+	
+	push	0
+	push	0
+	push	2
+	push 	offset crlf
+	push	dword ptr [hFileOutput]
+	call 	WriteFile
+	
+	mov		ebx, offset _IMPORT_DESCRIPTOR
+	add		ebx, 16
+	mov 	ebx, dword ptr [ebx]
+vonglap:
+	mov		esi, ebx
+	
+	push	0
+	push	0
+	push	ebx
+	push	dword ptr [hFileInput]
+	call	SetFilePointer
+	
+	push	0
+	push 	0
+	push	4
+	push	offset image_thunk
+	push	dword ptr [hFileInput]
+	call	ReadFile
+	
+	mov 	eax, dword ptr [image_thunk]
+	mov		ebx, eax
+	
+check_image_thunk:
+	xor 	eax, 0
+	cmp 	eax, 0
+	jz		cong_ebx
+	jnz		nhan
+cong_ebx:
+	pop		ebx
+	add		ebx, 20
+	jmp		read_descriptor
+nhan:	
+	mov		eax, ebx
+	
+	push	0
+	push	0
+	push	eax
+	push	dword ptr [hFileInput]
+	call	SetFilePointer
+	
+	push	0
+	push 	0
+	push	2
+	push	offset hint
+	push	dword ptr [hFileInput]
+	call	ReadFile
+	
+	push	0
+	push	0
+	push	7
+	push	offset hint_str
+	push	dword ptr [hFileOutput]
+	call 	WriteFile
+	
+	push	0
+	push 	0
+	push	256
+	push	offset name1
+	push	dword ptr [hFileInput]
+	call	ReadFile
+	
+	mov 	ebx, offset hint
+	mov 	ax, word ptr [ebx]
+	mov 	ecx, 4
+	lea 	edi, w_buffer
+	
+tobyte:
+	xor		ebx, ebx
+	rol 	ax, 4
+	mov 	bl, al
+	and 	bl, 0fh
+	mov 	dl,[hexchar + ebx]
+	mov 	[edi], dl
+	inc 	di
+	loop 	tobyte
+	
+	mov 	byte ptr [edi], 0
+	
+	push	0
+	push	0
+	push	4
+	push	offset w_buffer
+	push	dword ptr [hFileOutput]
+	call 	WriteFile
+	
+	push	0
+	push	0
+	push	2
+	push	offset space
+	push	dword ptr [hFileOutput]
+	call 	WriteFile
+	
+	push	0
+	push	0
+	push	16
+	push	offset name_f_str
+	push	dword ptr [hFileOutput]
+	call 	WriteFile
+	
+	push	offset name1
+	call 	lstrlen
+	
+	push	0
+	push	0
+	push	eax
+	push	offset name1
+	push	dword ptr [hFileOutput]
+	call 	WriteFile
+	
+	push	0
+	push	0
+	push	2
+	push	offset crlf
+	push	dword ptr [hFileOutput]
+	call 	WriteFile
+	
+	mov		ebx, esi
+	add		ebx, 8
+	jmp 	vonglap
+
+	check_end_descriptor:
 	mov		eax, [ebx]
 	cmp		eax, 0
-	jne		read_descriptor
+	jne		read_iat
 	add		ebx, 4
 	loop	check_end_descriptor
 
-
-
 end start
+
+
+
+
+
+
+
+

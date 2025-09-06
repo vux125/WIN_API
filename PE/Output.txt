@@ -135,6 +135,9 @@ NumberOfRelocations: Offset=00000318  Value=0000
 NUmberOfLinenumbers: Offset=0000031A  Value=0000
 Characteristics: Offset=0000031C  Value=42000040
 ------------------------------------------------------------------
+EXPORT ADDRESS TABLE
+Don't existing
+------------------------------------------------------------------
 IMPORT ADDRESS TABLE
 Module name: msvcrt.dll
 Hint:  0397  Name_function:  _wcsicmp

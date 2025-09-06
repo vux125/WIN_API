@@ -134,3 +134,142 @@ PointerToLinenumbers: Offset=00000314  Value=00000000
 NumberOfRelocations: Offset=00000318  Value=0000
 NUmberOfLinenumbers: Offset=0000031A  Value=0000
 Characteristics: Offset=0000031C  Value=42000040
+------------------------------------------------------------------
+IMPORT ADDRESS TABLE
+Module name: msvcrt.dll
+Hint:  0397  Name_function:  _wcsicmp
+Hint:  015F  Name_function:  _get_osfhandle
+Hint:  0189  Name_function:  _initterm
+Hint:  050E  Name_function:  wcschr
+Hint:  0034  Name_function:  ?terminate@@YAXXZ
+Hint:  04A3  Name_function:  memset
+Hint:  00CA  Name_function:  _cexit
+Hint:  04BE  Name_function:  setlocale
+Hint:  0448  Name_function:  fgetpos
+Hint:  043F  Name_function:  exit
+Hint:  00DB  Name_function:  _commode
+Hint:  005A  Name_function:  _XcptFilter
+Hint:  00B7  Name_function:  _amsg_exit
+Hint:  00A6  Name_function:  __wgetmainargs
+Hint:  0376  Name_function:  _vsnwprintf
+Hint:  0099  Name_function:  __setusermatherr
+Hint:  049F  Name_function:  memcpy
+Hint:  03F1  Name_function:  _write
+Hint:  005E  Name_function:  __C_specific_handler
+Hint:  0130  Name_function:  _fmode
+Hint:  0117  Name_function:  _exit
+Hint:  0097  Name_function:  __set_app_type
+Hint:  008A  Name_function:  __iob_func
+Hint:  0462  Name_function:  fwprintf
+Hint:  0446  Name_function:  fflush
+Hint:  02D4  Name_function:  _setmode
+Hint:  0124  Name_function:  _fileno
+Hint:  04F7  Name_function:  toupper
+Module name: api-ms-win-core-libraryloader-l1-2-0.dll
+Hint:  0015  Name_function:  GetModuleHandleW
+Hint:  000D  Name_function:  FreeLibrary
+Hint:  0019  Name_function:  LoadLibraryExW
+Hint:  0016  Name_function:  GetProcAddress
+Module name: IPHLPAPI.DLL
+Hint:  011B  Name_function:  SetCurrentThreadCompartmentId
+Hint:  007C  Name_function:  GetNetworkParams
+Hint:  0041  Name_function:  FreeInterfaceDnsSettings
+Hint:  0062  Name_function:  GetInterfaceDnsSettings
+Hint:  0019  Name_function:  ConvertLengthToIpv4Mask
+Hint:  0045  Name_function:  GetAdaptersAddresses
+Hint:  000C  Name_function:  ConvertGuidToStringW
+Hint:  000F  Name_function:  ConvertInterfaceIndexToLuid
+Hint:  0011  Name_function:  ConvertInterfaceLuidToGuid
+Hint:  004D  Name_function:  GetCurrentThreadCompartmentId
+Hint:  0014  Name_function:  ConvertInterfaceLuidToNameW
+Module name: api-ms-win-core-heap-l2-1-0.dll
+Hint:  0008  Name_function:  LocalAlloc
+Hint:  000A  Name_function:  LocalFree
+Module name: api-ms-win-core-string-l1-1-0.dll
+Hint:  0007  Name_function:  WideCharToMultiByte
+Hint:  0006  Name_function:  MultiByteToWideChar
+Hint:  0002  Name_function:  CompareStringW
+Module name: api-ms-win-core-processenvironment-l1-1-0.dll
+Hint:  000B  Name_function:  GetEnvironmentVariableW
+Module name: api-ms-win-core-errorhandling-l1-1-0.dll
+Hint:  000F  Name_function:  SetUnhandledExceptionFilter
+Hint:  0005  Name_function:  GetLastError
+Hint:  0011  Name_function:  UnhandledExceptionFilter
+Module name: api-ms-win-core-console-l1-1-0.dll
+Hint:  0007  Name_function:  GetConsoleMode
+Module name: api-ms-win-core-file-l1-1-0.dll
+Hint:  0037  Name_function:  GetFileType
+Hint:  0011  Name_function:  FileTimeToLocalFileTime
+Module name: api-ms-win-core-localization-l1-2-0.dll
+Hint:  003F  Name_function:  SetThreadUILanguage
+Hint:  0009  Name_function:  FormatMessageW
+Module name: dhcpcsvc.DLL
+Hint:  0000  Name_function:  DhcpAcquireParameters
+Hint:  0030  Name_function:  DhcpReleaseParameters
+Hint:  001E  Name_function:  DhcpHandlePnPEvent
+Hint:  000C  Name_function:  DhcpEnumClasses
+Module name: api-ms-win-core-registry-l1-1-0.dll
+Hint:  002E  Name_function:  RegSetValueExW
+Hint:  0025  Name_function:  RegQueryValueExW
+Hint:  001E  Name_function:  RegOpenKeyExW
+Hint:  0000  Name_function:  RegCloseKey
+Module name: ntdll.dll
+Hint:  0011  Name_function:  RtlIpv6AddressToStringExW
+Hint:  0012  Name_function:  RtlIpv6AddressToStringW
+Hint:  0005  Name_function:  RtlFreeUnicodeString
+Hint:  0009  Name_function:  RtlIpv4AddressToStringExW
+Hint:  0609  Name_function:  RtlStringFromGUID
+Module name: api-ms-win-core-sysinfo-l1-1-0.dll
+Hint:  001B  Name_function:  GetTickCount
+Hint:  0003  Name_function:  GetComputerNameExW
+Hint:  0017  Name_function:  GetSystemTimeAsFileTime
+Module name: dhcpcsvc6.DLL
+Hint:  0017  Name_function:  Dhcpv6SetUserClass
+Hint:  000E  Name_function:  Dhcpv6ReleaseParameters
+Hint:  000B  Name_function:  Dhcpv6IsEnabled
+Hint:  0000  Name_function:  Dhcpv6AcquireParameters
+Hint:  000A  Name_function:  Dhcpv6GetUserClasses
+Module name: WS2_32.dll
+Hint:  000A  Name_function:  InetNtopW
+Module name: api-ms-win-core-timezone-l1-1-0.dll
+Hint:  0001  Name_function:  FileTimeToSystemTime
+Module name: api-ms-win-core-datetime-l1-1-0.dll
+Hint:  0006  Name_function:  GetTimeFormatW
+Hint:  0002  Name_function:  GetDateFormatW
+Module name: DNSAPI.dll
+Hint:  00B6  Name_function:  DnsRecordStringForType
+Hint:  004F  Name_function:  DnsFree
+Hint:  0068  Name_function:  DnsGetDdrInfo
+Hint:  001A  Name_function:  DnsBuildDotHost
+Hint:  004B  Name_function:  DnsFlushResolverCache
+Hint:  00A2  Name_function:  DnsQueryConfigAllocEx
+Hint:  00C1  Name_function:  DnsResolverOp
+Hint:  0051  Name_function:  DnsFreeConfigStructure
+Hint:  0067  Name_function:  DnsGetCacheRecords
+Module name: api-ms-win-core-heap-l1-1-0.dll
+Hint:  0006  Name_function:  HeapFree
+Hint:  0002  Name_function:  HeapAlloc
+Hint:  000A  Name_function:  HeapSetInformation
+Hint:  0000  Name_function:  GetProcessHeap
+Module name: api-ms-win-core-synch-l1-2-0.dll
+Hint:  002D  Name_function:  Sleep
+Module name: api-ms-win-core-rtlsupport-l1-1-0.dll
+Hint:  0011  Name_function:  RtlVirtualUnwind
+Hint:  000B  Name_function:  RtlLookupFunctionEntry
+Hint:  0002  Name_function:  RtlCaptureContext
+Module name: api-ms-win-core-processthreads-l1-1-0.dll
+Hint:  000C  Name_function:  GetCurrentProcess
+Hint:  000D  Name_function:  GetCurrentProcessId
+Hint:  0055  Name_function:  TerminateProcess
+Hint:  0011  Name_function:  GetCurrentThreadId
+Module name: api-ms-win-core-profile-l1-1-0.dll
+Hint:  0000  Name_function:  QueryPerformanceCounter
+Module name: NSI.dll
+Hint:  000A  Name_function:  NsiGetAllParameters
+Hint:  0001  Name_function:  NsiAllocateAndGetTable
+Hint:  0009  Name_function:  NsiFreeTable
+Hint:  0014  Name_function:  NsiSetAllParameters
+Module name: api-ms-win-security-base-l1-1-0.dll
+Hint:  001B  Name_function:  CheckTokenMembership
+Hint:  0016  Name_function:  AllocateAndInitializeSid
+Hint:  002E  Name_function:  FreeSid

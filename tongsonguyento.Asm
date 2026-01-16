@@ -1,191 +1,331 @@
 .386
 .model flat, stdcall
-option casemap :none
-include C:\masm32\include\windows.inc
-include C:\masm32\include\kernel32.inc
-include C:\masm32\include\user32.inc
-includelib C:\masm32\lib\kernel32.lib
-includelib C:\masm32\lib\user32.lib
+option casemap:none
+
+
+include windows.inc
+include kernel32.inc
+include user32.inc
+
+includelib kernel32.lib
+includelib user32.lib
 
 
 .data
+	fileName1 db "C:\Users\vutv\Downloads\RadASM-2.2.2.4-FullPackage\Masm\Projects\songuyento\SoThuNhat.txt", 0
+	so1 dd 0
+	buffer1 dd 0
+	pos1 dw -4h
+	
+	fileName2 db "C:\Users\vutv\Downloads\RadASM-2.2.2.4-FullPackage\Masm\Projects\songuyento\SoThuHai.txt", 0
+	so2 dd 0
+	buffer2 dd 0
+	pos2 dw -4h
+	
+	fileName3 db "C:\Users\vutv\Downloads\RadASM-2.2.2.4-FullPackage\Masm\Projects\songuyento\Tong.txt", 0
+	
+	hFile1 dd 0
+	hFile2 dd 0
+	hFileResult dd 0
+	
+	size1 dw 0
+	size2 dw 0
+	
+	cx1	dw 4
+	cx2 dw 4
+	
+	nho db 0
+	tmp db 4 dup(0)
+	
+	ini dd "0000"
+.code
 
- pathInput db "C:\Users\My Desktop\Documents\Malware\code\asm\bai1\input.txt",0
- pathOutput db "C:\Users\My Desktop\Documents\Malware\code\asm\bai1\output.txt",0
- titl db "Tong cua mang so nguyen to trong mang la: ", 0
- sum db 32 dup(0)
- data db 100 dup(0)
- read dd 0
- szSum dd 0
- write dd 0
- arrOne db 512 dup(0)
- szOne db 0
- arrTwo db 512 dup(0)
- szTwo db 0
- tmp dd 0
-  
- 
- .code
- 
-IntSqrt PROC uses edx n:dword
-	finit			; khoi tao FPU
-	fild 	n		; n -> ST0
-	fsqrt			; ST0 = sqrt(ST0)
-	fistp	tmp
-	mov		eax, tmp
-	mov 	edx, eax
-	inc		edx
-	imul	edx, edx
-	cmp 	edx, n
-	ja		done
-	inc		eax
-done:
-	ret
-IntSqrt ENDP
-
-IsPrime PROC uses ecx ebx edx, sq:dword, n:dword
-	mov 	ecx, 2		
-	mov 	eax, n
-	cmp 	eax, ecx		;so sanh n voi 2 
-	jb		not_prime		; neu nho hon thi khong phai prime
-	cmp 	eax, 2
-	jne		lap
-	mov		eax, 1
-	ret
-lap:
-	mov 	eax, n			
-	xor 	edx, edx
-	div 	ecx				;eax = eax / ecx, edx = eax % ecx
-	cmp		edx, 0			;so sanh so du edx voi 0
-	je		not_prime		;neu bang 0 thi khong phai so nguyen to
-	
-	inc 	ecx				;neu khac 0 thi tang ecx += 1
-	cmp		ecx, sq			;so sanh voi ecx vói sq
-	jbe		lap				;nho hon hoac bang thi tiep tuc lap
-	
-	mov 	eax, 1			;het vong lap la so nguyen to tra ve 1
-	ret
-	
-not_prime:
-	xor	eax, eax			;khon phai so nguyen to tra ve 0
-	ret	
-IsPrime ENDP
- 
-;------------------------------------------------------------------------------------------------------------------------
-start:
-
-	;mo file
-	push 	0
-	push 	FILE_ATTRIBUTE_NORMAL
-	push 	3
-	push 	NULL
-	push 	FILE_SHARE_READ
-	push 	GENERIC_READ
-	push 	offset pathInput
-	call 	CreateFile
-	
-	
-	;doc file
-	push 	NULL
-	push 	offset read
-	push 	512
-	push 	offset data
-	push 	eax
-	call 	ReadFile
-	
-	push	eax
-	call 	CloseHandle
-	
-	xor 	eax, eax
-	xor 	edx, edx
-	xor 	ecx, ecx
-	xor 	ebx, ebx
-	mov 	ebx, offset data
-lapsothunhat:
-	mov 	dl, [ebx]
-	mov 	byte ptr [arrOne+ecx], dl
-	mov 	eax, 0
-	add 	ebx, 3
-	inc 	cl
-	cmp 	edx, eax
-	jne 	lapsothunhat
+Tong PROC uses ebx ecx
 
 	
-	sub 	cl, 1
-	mov 	byte ptr [szOne], cl
-	xor 	eax, eax
-	xor 	ecx, ecx
-	xor 	ebx, ebx	
+	mov 	edi, offset tmp
+	
 	xor		edx, edx
-tinhtong:
-	movzx 	edx, byte ptr [arrOne+ecx]
-	sub 	edx, '0'
-	push	edx
-	call	IntSqrt
+	mov 	edx, 3
+	
+	cmp 	dl, 0
+	jb		doneLoop
+	
+	tinhtong:
+	
+	rol		ebx, 8
+	cmp 	bl, 0h
+	jne		tru1
+	je		khongtru
+	tru1:
+	sub		bl, 30h
+	
+	rol		ecx, 8
+	sub		cl, 30h
+	
+	
+	add		bl, cl
+	add		bl, nho
+	
+	xor 	eax, eax
+	mov		al, bl
 	
 	push	edx
-	push 	eax
-	call 	IsPrime
+	xor 	dl, dl
+	mov 	bl, 10h
+	div		bl
 	
-	cmp		eax, 1
-	jne		sotieptheo
-	add		ebx, edx
+	mov 	nho, al
 	
-
-sotieptheo:	
-	inc 	cl
-	cmp 	cl, [szOne]
-	jl 		tinhtong
+	add		ah, 30h
 	
-	xor		eax, eax
-	mov 	eax, ebx
-	mov 	edi, offset sum
-	xor 	ecx, ecx
+	pop		edx
+	mov		[edi+edx], ah
 	
-sosangchuoi:
-	xor 	edx, edx
-	xor 	ebx, ebx
-	mov 	ebx, 10
-	div 	ebx
-	add 	edx, '0'
-	push 	edx
-	inc 	ecx
-	cmp 	eax, 0 
-	jnz 	sosangchuoi
+	dec		dl
 	
-	mov 	edi, offset sum
-	mov 	ebx, offset szSum
-	mov 	[ebx], ecx
+	cmp 	dl, 0
+	jns	 	tinhtong
 	
-
-luura:
-	pop 	edx
-	mov 	[edi], dl
-	inc 	edi
-	loop	luura
+	doneLoop:
 	
-	mov		byte ptr [edi], 0 
-	mov 	ebx, edi
-	
-	;in ra file
 	push	0
-	push	FILE_ATTRIBUTE_NORMAL
-	push	OPEN_ALWAYS
-	push	NULL
-	push	FILE_SHARE_WRITE
-	push	GENERIC_WRITE
-	push	offset pathOutput	
-	call 	CreateFile
+	push	0
+	push	0
+	push	hFileResult	
+	call 	SetFilePointer
 	
-	push 	0
-	push 	offset write
-	push 	offset szSum
-	push 	offset sum
-	push	eax
+	push 	NULL
+	push	0
+	push 	4
+	push	offset tmp
+	push	hFileResult
 	call 	WriteFile
 	
-	push	eax
-	call 	CloseHandle
-	
-end start 
+	ret
+Tong ENDP
 
+start:
+	push	NULL
+	push 	NULL
+	push	FILE_ATTRIBUTE_NORMAL
+	push	OPEN_EXISTING
+	push	NULL
+	push	FILE_SHARE_READ
+	push 	GENERIC_READ
+	push 	offset fileName1
+	call	CreateFile	
+	
+	mov 	ebx, offset hFile1
+	mov 	[ebx], eax
+	
+	push	0
+	push	hFile1
+	call 	GetFileSize
+	mov 	size1, ax
+	
+	push	NULL
+	push 	NULL
+	push	FILE_ATTRIBUTE_NORMAL
+	push	OPEN_EXISTING
+	push	NULL
+	push	FILE_SHARE_READ
+	push 	GENERIC_READ
+	push 	offset fileName2
+	call	CreateFile	
+	
+	mov 	ebx, offset hFile2
+	mov 	[ebx], eax
+	
+	push	0
+	push	hFile2
+	call 	GetFileSize
+	
+	mov		size2, ax
+	
+	push	NULL
+	push 	NULL
+	push	FILE_ATTRIBUTE_NORMAL
+	push	CREATE_ALWAYS
+	push	NULL
+	push	FILE_SHARE_WRITE
+	push 	GENERIC_WRITE
+	push 	offset fileName3
+	call	CreateFile	
+	
+	mov 	ebx, offset hFileResult
+	mov 	[ebx], eax
+	
+	xor 	ecx, ecx
+	mov		cx, 4h
+	
+		
+	Nhan:
+	;kiem tra xem doc het file 1 chua
+	kt1:
+	mov 	dx, size1
+	cmp 	dx, 0h
+	ja		kt2
+	jmp		done1
+	
+	
+	;kiem tra xem doc het file 2 chua
+	kt2:
+	mov 	dx, size2
+	cmp 	dx, 0h
+	ja		donektr
+	jmp 	done2
+	
+	done1:
+	mov		ebx, offset buffer1
+	xor		eax, eax
+	mov		[ebx], eax
+	
+	mov 	dx, size2
+	cmp 	dx, 0h
+	ja 		kt2
+	jmp		done
+	
+	
+	done2:
+	mov		ebx, offset buffer2
+	xor		eax, eax
+	mov		[ebx], eax
+	
+	mov 	dx, size1
+	cmp 	dx, 0h
+	ja		donektr
+	
+	jmp 	done
+	
+	donektr:
+	
+	mov 	dx, size1
+	cmp 	dx, 4h
+	jb		setSize1
+	
+	xor 	ebx, ebx
+	mov 	bx, size1
+	sub 	ebx, 4
+	mov		size1, bx
+	
+	mov		dx, size2
+	cmp		dx, 4h
+	jb		setSize2
+	
+	xor 	ebx, ebx
+	mov 	bx, size2
+	sub 	ebx, 4h
+	mov		size2, bx
+	jmp		docvatinh
+	
+	setSize1:
+	mov		cx, size1
+	mov		cx1, cx
+	xor		ax, ax
+	mov		size1, ax
+	
+	mov		dx, size2
+	cmp		dx, 4h
+	jb		setSize2	
+	
+	xor 	ebx, ebx
+	mov 	bx, size2
+	sub 	ebx, 4
+	mov		size2, bx
+	
+	jmp		docvatinh
+		
+	setSize2:
+	mov		cx, size2
+	mov 	cx2, cx
+	xor		ax, ax
+	mov 	size2, ax
+	
+	jmp 	docvatinh
+	
+
+	
+	;so 1
+	docvatinh:
+	
+	xor     ecx, ecx
+	mov		cx, size1
+	
+	push	0h
+	push	0h
+	push	ecx
+	push 	hFile1
+	call 	SetFilePointer
+	
+
+	xor 	ecx, ecx
+	mov		cx, cx1
+	
+	
+	push 	NULL
+	push	0
+	push	ecx
+	push	offset buffer1
+	push 	hFile1
+	call	ReadFile
+	
+	;so 2
+	xor		ecx, ecx
+	mov 	cx, size2
+	
+	push	0
+	push	0	
+	push	ecx
+	push 	hFile2
+	call 	SetFilePointer
+	
+	xor		ecx,ecx
+	mov		cx, cx2
+	
+	push 	NULL
+	push	0
+	push	ecx
+	push	offset buffer2
+	push 	hFile2
+	call	ReadFile
+	
+	mov 	ebx, buffer1
+	mov		ecx, buffer2
+	
+	call	Tong
+	
+	xor 	ecx, ecx
+	mov		buffer1, ecx
+	mov		buffer2, ecx
+	mov		ecx, 4h
+	jmp 	Nhan
+
+	
+	done:
+	
+	mov		al, nho
+	cmp 	al, 0h
+	je		return		
+	
+	add		al, 30h
+	mov 	nho, al
+	
+	push	0
+	push	0
+	push	0
+	push	hFileResult	
+	call 	SetFilePointer
+	
+	
+	push 	NULL
+	push	0
+	push 	1
+	push	offset nho
+	push	hFileResult
+	call 	WriteFile
+	
+	return:
+	ret
+	
+end start

@@ -285,10 +285,13 @@ start:
 		
 		push 	hInput
 		call 	CloseHandle
-		push	offset output
-		call 	DeleteFile
+		
 		push 	hOutput
 		call 	CloseHandle
+		
+		push	offset output
+		call 	DeleteFile
+		
 		push 	hOutputReal
 		call 	CloseHandle
 		ret

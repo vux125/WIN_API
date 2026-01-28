@@ -25,7 +25,7 @@ includelib user32.lib
 	off					dd 0
 	index				dd 0
 	delta				dd 0
-	
+	namefunction 		db 128 dup(0)
 	;ten bien dung chung
 	os					db "Offset: ", 0
 	sz 					db " Size: ", 0
@@ -99,18 +99,56 @@ includelib user32.lib
 	tmp_section				db 40 dup(0)
 	arr_section				dd 32 dup(0)
 	;----------------------------------------------------------------------
+	titIAT				db "------------------IAT------------------", 13, 10, 0
 	iid						IMAGE_IMPORT_DESCRIPTOR <>
 	module_name				db "Module name: ", 0
 	module_name_val			db 64 dup(0)
-	ofts					db "OFTs: ", 0
-	timedatestamp			db "TimeDateStamp: ", 0
-	forwarderchain			db "ForwarderChain: ", 0
-	namerav					db "Name RAV: ", 0
-	fts						db "FTs(IAT): ", 0
+	ofts					db " | OFTs: ", 0
+	timedatestamp			db " | TimeDateStamp: ", 0
+	forwarderchain			db " | ForwarderChain: ", 0
+	namerav					db " | Name RAV: ", 0
+	fts						db " | FTs(IAT): ", 0
 	
 	hint					db "Hint: ", 0
-	namefunc				db "Name function: ", 0
+	namefunc				db " | Name function: ", 0
+	offs					dd 0
+	ordinal					db " | Ordinal: ", 0
+	na						db "N/A", 0
+	itd						IMAGE_THUNK_DATA32 <>
 	
+	
+	;--------------------------------------------------------------------
+	titEAT					db "------------------EAT------------------", 13, 10, 0
+	titTableEAT				db "-----------------TABLE EAT-----------------", 13, 10, 0
+	ied						IMAGE_EXPORT_DIRECTORY <>
+	characteristics_exp		db "Characteristics: ", 0
+	timedatestamp_exp		db "TimeDateStamp: ", 0
+	majorversion			db "MajorVersion: ", 0
+	minorversion			db "MinorVersion: ", 0
+	name_exp				db "Name: ", 0
+	nname					dd 0
+	base					db "Base: ", 0
+	nbase					dd 0
+	numberoffunctions		db "NumberOfFunctions: ", 0
+	nfunc					dd 0
+	numberofnames			db "NumberOfNames: ", 0
+	nName					dd 0
+	addressoffunctions		db "AddressOfFunctions: ", 0
+	addressofnames			db "AddressOfNames: ", 0
+	addressofnameordinals	db "AddressOfNameOrdinal: ", 0
+	ordinal_export			db "Ordinal: ", 0
+	name_ordinal 			db "Name Ordinal: ", 0
+	func_rva				db "Function RVA: ", 0
+	name_rva				db "Name RVA: ", 0
+	name_exp_func			db "Name: ", 0
+	
+	exp_func				dd 0
+	exp_name				dd 0
+	exp_ord					dd 0
+	
+	tmp_exp					dw 0
+	ok						db 0
+	func_rva_val			dd 0
 .code
 
 HexToString PROC uses eax ebx ecx edx, count:dword
@@ -296,7 +334,49 @@ WriteDataToFileInLineByNumber PROC uses eax ebx ecx edx, til:dword, buffer:dword
 
 WriteDataToFileInLineByNumber endp
 
+CheckOrdinal PROC uses ebx ecx edx, ind:dword
+	xor 	eax, eax
+	mov		eax, exp_ord
+	mov		ecx, nName
+	xor		edx, edx
+	loop_check:
+	
+	mov		ov.loffset, eax
+	push	eax
+	push	ecx
+	
+	push	offset ov
+	push	NULL
+	push	2
+	push	offset tmp_exp
+	push	hFile
+	call	ReadFile
+	
+	xor		eax, eax
+	mov		ax, tmp_exp
+	cmp		eax, ind
+	inc		edx
+	je		done_check_ord
+	
+	loop_check_done:
+	pop		ecx
+	pop		eax
+	add		eax, 2
+	loop	loop_check
+	xor 	bl, bl
+	mov		bl, 0
+	mov		ok, bl
+	ret
+	
+	done_check_ord:
+	xor 	bl, bl
+	mov		bl, 1
+	mov		ok, bl
+	xor 	eax, eax
+	mov		eax, edx
+	ret
 
+CheckOrdinal endp
 
 start:
 	push	NULL
@@ -1116,6 +1196,10 @@ start:
 	
 	
 	;IAT------------------------------------------------------
+	
+	push	offset titIAT
+	call	WriteTitleToFile
+	
 	xor		edx, edx
 	xor 	ecx, ecx
 	mov		cx, numberofsectionsval
@@ -1163,25 +1247,28 @@ start:
 	sub		eax, ebx
 	
 	
-	push	0
-	push	0
-	push	eax
-	push	hFile
-	call	SetFilePointer
+	mov		offs, eax
 	
 	read_image_import_descriptor:
 	
-	push 	NULL
+	xor		eax, eax
+	mov		eax, offs
+	mov		ov.loffset, eax
+	add		eax, 14h
+	mov		offs, eax
+	 
+	push 	offset ov
 	push	NULL
 	push	14h
 	push	offset iid
 	push	hFile
 	call 	ReadFile
 	
+	
 	mov		eax, iid.Name1
 	xor 	ebx, ebx
 	cmp		ebx, eax
-	je		done
+	je		done_iat
 	;module_name
 	xor		eax, eax
 	mov		eax, iid.Name1
@@ -1278,14 +1365,428 @@ start:
 	push	offset fts
 	call	WriteDataToFile
 	
+	xor		ebx, ebx
+	mov		ebx, iid.OriginalFirstThunk
+	sub		ebx, delta
+	
+	read_array_itd:
+	mov		ov.loffset, ebx
+	push	ebx
+	push	offset ov
+	push	0
+	push	4
+	push	offset itd
+	push	hFile
+	call	ReadFile
+	
+	xor		eax, eax
+	cmp		eax, itd
+	je		done_read_image_import_descriptor
+	
+	;ordinal
+	xor		eax, eax
+	mov		eax, itd.u1.Ordinal
+	xor		ebx, ebx
+	mov		ebx, 80000000h
+	and		ebx, eax
+	cmp		ebx, 00000000h
+	je		read_addressofdata
+	mov		dword ptr data, eax
+	
+	xor		eax, eax
+	mov		eax, dword ptr na
+	
+	mov		dword ptr tmp, eax		
+	
+	push	offset tmp
+	push	offset hint
+	call	WriteDataToFileInLine
+	
+	push	4h
+	call	HexToString
+	
+	xor		ecx, ecx
+	mov		ecx, 4h
+	push	offset tmp
+	call	Reverse
+	
+	push	offset tmp
+	push	offset ordinal
+	call	WriteDataToFile
+	
+	xor		ebx, ebx
+	pop		ebx
+	add		ebx, 4
+	jmp		read_array_itd
+	
+	read_addressofdata:
+	xor		eax, eax
+	mov		eax, itd.u1.AddressOfData
+	sub		eax, delta
+	;doc va ghi hint
+	mov		ov.loffset, eax
+
+	push	offset ov
+	push	0
+	push	2
+	push	offset data
+	push	hFile
+	call	ReadFile
+	
+	push	2h
+	call	HexToString
+	
+	xor		ecx, ecx
+	mov		ecx, 2h
+	push	offset tmp
+	call	Reverse
+	
+	push	offset tmp
+	push	offset hint
+	call	WriteDataToFileInLine
+	
+	push	NULL
+	push	0
+	push	128
+	push	offset namefunction
+	push	hFile
+	call	ReadFile
+	
+	push	offset namefunction
+	push	offset namefunc
+	call	WriteDataToFile
+	
+	xor		ebx, ebx
+	pop		ebx
+	add		ebx, 4
+	jmp		read_array_itd
+	
+	done_read_image_import_descriptor:
 	push	14h
 	push	offset iid
 	call 	RtlZeroMemory
 	
 	jmp		read_image_import_descriptor
 	
-	done:
-	ret
+	done_iat:
+	;EAT------------------------------------------------------------------------------------------
+	push	offset titEAT
+	call	WriteTitleToFile
 	
+	xor		edx, edx
+	xor 	ecx, ecx
+	mov		cx, numberofsectionsval
+	mov		edx, offset arr_section
+	
+	loop_find_section_eat:
+	
+	xor 	eax, eax
+	mov		eax, rva_export
+	xor		ebx, ebx
+	mov		ebx, dword ptr [edx]
+	
+	cmp		eax, ebx
+	jae		next_section_eat
+	jb		finded_eat
+	next_section_eat:
+	add		edx, 8
+	loop	loop_find_section_eat
+	finded_eat:
+	mov		eax, offset export_section
+	sub		edx, 8
+	xor		ecx, ecx
+	mov		ecx, [edx]
+	mov		[eax], ecx
+	
+	mov		ecx, [edx+4]
+	mov		[eax+4], ecx
+	
+	;tinh file offset cua image import discriptor
+	
+	xor		eax, eax
+	mov		eax, rva_export
+	
+	xor		ebx, ebx
+	mov		ebx, dword ptr export_section
+	
+	;sub		eax, ebx
+	
+	xor		ecx, ecx
+	mov		ecx, offset export_section
+	add		ecx, 4
+	mov		ecx, [ecx]
+	sub		ebx, ecx
+	mov		delta, ebx
+	sub		eax, ebx
+	
+	
+	mov		offs, eax
+	
+	mov		ov.loffset, eax
+	
+	push	offset ov
+	push	NULL
+	push	28h
+	push	offset ied
+	push	hFile
+	call	ReadFile
+	
+	;Characteristics
+	mov		eax, ied.Characteristics
+	mov		dword ptr data, eax
+	
+	push	4h
+	call	HexToString
+	
+	xor		ecx, ecx
+	mov		ecx, 4h
+	push	offset tmp
+	call	Reverse
+	
+	push	offset tmp
+	push	offset characteristics_exp
+	call	WriteDataToFile
+	
+	;TimeDateStamp_exp
+	mov		eax, ied.TimeDateStamp
+	mov		dword ptr data, eax
+	
+	push	4h
+	call	HexToString
+	
+	xor		ecx, ecx
+	mov		ecx, 4h
+	push	offset tmp
+	call	Reverse
+	
+	push	offset tmp
+	push	offset timedatestamp_exp
+	call	WriteDataToFile
+	
+	;MajorVersion
+	mov		ax, ied.MajorVersion
+	mov		word ptr data, ax
+	
+	push	2h
+	call	HexToString
+	
+	xor		ecx, ecx
+	mov		ecx, 2h
+	push	offset tmp
+	call	Reverse
+	
+	push	offset tmp
+	push	offset majorversion
+	call	WriteDataToFile
+	
+	;MinorVersion
+	mov		ax, ied.MinorVersion
+	mov		word ptr data, ax
+	
+	push	2h
+	call	HexToString
+	
+	xor		ecx, ecx
+	mov		ecx, 2h
+	push	offset tmp
+	call	Reverse
+	
+	push	offset tmp
+	push	offset minorversion
+	call	WriteDataToFile
+	
+	;nname
+	mov		eax, ied.nName
+	mov		dword ptr data, eax
+	
+	push	4h
+	call	HexToString
+	
+	xor		ecx, ecx
+	mov		ecx, 4h
+	push	offset tmp
+	call	Reverse
+	
+	push	offset tmp
+	push	offset name_exp
+	call	WriteDataToFile
+	
+	;nbase
+	mov		eax, ied.nBase
+	mov		dword ptr data, eax
+	
+	push	4h
+	call	HexToString
+	
+	xor		ecx, ecx
+	mov		ecx, 4h
+	push	offset tmp
+	call	Reverse
+	
+	push	offset tmp
+	push	offset base
+	call	WriteDataToFile
+	
+	;numberoffunc
+	mov		eax, ied.NumberOfFunctions
+	mov		dword ptr data, eax
+	mov		nfunc, eax
+	
+	push	4h
+	call	HexToString
+	
+	xor		ecx, ecx
+	mov		ecx, 4h
+	push	offset tmp
+	call	Reverse
+	
+	push	offset tmp
+	push	offset numberoffunctions
+	call	WriteDataToFile
+	;numberofnames
+	mov		eax, ied.NumberOfNames
+	mov		dword ptr data, eax
+	mov		nName, eax
+	
+	push	4h
+	call	HexToString
+	
+	xor		ecx, ecx
+	mov		ecx, 4h
+	push	offset tmp
+	call	Reverse
+	
+	push	offset tmp
+	push	offset numberofnames
+	call	WriteDataToFile
+	
+	;addressoffunctions
+	mov		eax, ied.AddressOfFunctions
+	mov		dword ptr data, eax
+	sub		eax, delta
+	mov		exp_func, eax
+	
+	push	4h
+	call	HexToString
+	
+	xor		ecx, ecx
+	mov		ecx, 4h
+	push	offset tmp
+	call	Reverse
+	
+	push	offset tmp
+	push	offset addressoffunctions
+	call	WriteDataToFile
+
+	;addressofnames
+	mov		eax, ied.AddressOfNames
+	mov		dword ptr data, eax
+	sub		eax, delta
+	mov		exp_name, eax
+	
+	push	4h
+	call	HexToString
+	
+	xor		ecx, ecx
+	mov		ecx, 4h
+	push	offset tmp
+	call	Reverse
+	
+	push	offset tmp
+	push	offset addressofnames
+	call	WriteDataToFile
+	
+	;addressofnameordinals
+	mov		eax, ied.AddressOfNameOrdinals
+	mov		dword ptr data, eax
+	sub		eax, delta
+	mov		exp_ord, eax
+	
+	push	4h
+	call	HexToString
+	
+	xor		ecx, ecx
+	mov		ecx, 4h
+	push	offset tmp
+	call	Reverse
+	
+	push	offset tmp
+	push	offset addressofnameordinals
+	call	WriteDataToFile
+	;----------------------
+	push	offset titTableEAT
+	call  	WriteTitleToFile
+	
+	xor		ecx, ecx
+	xor		edx, edx
+	mov		edx, exp_func
+	;for addresoffunction {if index_iat in index_iot: get value_in_index_iot else ok = 0 }
+	
+	
+	loop_addressoffunctions:
+	push	ecx
+	xor		eax, eax
+	mov		eax, nbase
+	
+	add		eax, ecx
+	mov		dword ptr data, eax
+	
+	push	4h
+	call	HexToString
+	
+	xor		ecx, ecx
+	mov		ecx, 4h
+	push	offset tmp
+	call 	Reverse
+	
+	push	offset tmp
+	push	offset ordinal_export
+	call	WriteDataToFileInLine
+	;---------------------
+	mov		ov.loffset, edx
+	push	edx
+	
+	push	offset ov
+	push 	NULL
+	push	4
+	push	offset func_rva_val
+	push	hFile
+	call	ReadFile
+	xor		edx, edx
+	mov		edx, func_rva_val
+	
+	mov		dword ptr data, edx
+	push	4h
+	call	HexToString
+	
+	xor		ecx, ecx
+	mov		ecx, 4h
+	push	offset tmp
+	call 	Reverse
+	
+	push	offset tmp
+	push	offset ordinal_export
+	call	WriteDataToFileInLine
+	;-------------------------
+	;xor 	ecx, ecx
+	;pop 	ecx
+	;push	ecx
+	;call	CheckOrdinal
+	
+	;xor		ebx, ebx
+	;mov		bl, 1
+	;cmp		bl, ok
+	;je		h_ordinal
+	
+	pop		edx
+	add		edx, 4
+	pop		ecx
+	inc		ecx
+	cmp		ecx, nfunc
+	ja		h_ordinal
+	jmp 	loop_addressoffunctions
+	
+	h_ordinal:
+	ret
 end start
 

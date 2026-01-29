@@ -5,9 +5,11 @@ option casemap:none
 include windows.inc
 include kernel32.inc
 include user32.inc
+include shlwapi.inc
 
 includelib kernel32.lib
 includelib user32.lib
+includelib shlwapi.lib
 
 
 .data
@@ -119,7 +121,7 @@ includelib user32.lib
 	
 	;--------------------------------------------------------------------
 	titEAT					db "------------------EAT------------------", 13, 10, 0
-	titTableEAT				db "-----------------TABLE EAT-----------------", 13, 10, 0
+	titTableEAT				db "---------------TABLE EAT---------------", 13, 10, 0
 	ied						IMAGE_EXPORT_DIRECTORY <>
 	characteristics_exp		db "Characteristics: ", 0
 	timedatestamp_exp		db "TimeDateStamp: ", 0
@@ -137,10 +139,10 @@ includelib user32.lib
 	addressofnames			db "AddressOfNames: ", 0
 	addressofnameordinals	db "AddressOfNameOrdinal: ", 0
 	ordinal_export			db "Ordinal: ", 0
-	name_ordinal 			db "Name Ordinal: ", 0
-	func_rva				db "Function RVA: ", 0
-	name_rva				db "Name RVA: ", 0
-	name_exp_func			db "Name: ", 0
+	name_ordinal 			db " | Name Ordinal: ", 0
+	func_rva				db " | Function RVA: ", 0
+	name_rva				db " | Name RVA: ", 0
+	name_exp_func			db " | Name: ", 0
 	
 	exp_func				dd 0
 	exp_name				dd 0
@@ -149,6 +151,33 @@ includelib user32.lib
 	tmp_exp					dw 0
 	ok						db 0
 	func_rva_val			dd 0
+	name_function_exp		db 128 dup(0)
+	
+	;----------------relocation-------------------------
+	titReloc					db "------------------RELOCATION------------------", 13, 10, 0
+	titTableReloc				db "---------------TABLE RELOCATION---------------", 13, 10, 0
+	sizeReloc					dd 0
+	start_reloc					dd 0
+	rva_reloc							db "RVA: ", 0
+	rva_val						dd 0
+	sizeofblock					db " | Size Of Block: ", 0
+	sizeofblock_val				dd 0
+	items						db " | Items: ", 0
+	items_val					dd 0
+	item						db "Item: ", 0
+	item_val					dw 0
+	rva_item					db " | RVA: ", 0
+	rva_item_val				dd 0
+	typ							db " | Type: ", 0
+	entry						dw 0
+	items_dec					dd 0
+	
+	fmt           				db "%d",0
+	bff		 					db 32 dup(0)
+	
+	absolute					db "ABSOLUTE",0
+	highlow						db "HIGHLOW", 0
+	highadj						db "HIGHADJ", 0
 .code
 
 HexToString PROC uses eax ebx ecx edx, count:dword
@@ -344,6 +373,7 @@ CheckOrdinal PROC uses ebx ecx edx, ind:dword
 	mov		ov.loffset, eax
 	push	eax
 	push	ecx
+	push	edx
 	
 	push	offset ov
 	push	NULL
@@ -355,10 +385,9 @@ CheckOrdinal PROC uses ebx ecx edx, ind:dword
 	xor		eax, eax
 	mov		ax, tmp_exp
 	cmp		eax, ind
-	inc		edx
+	pop		edx
 	je		done_check_ord
-	
-	loop_check_done:
+	inc		edx
 	pop		ecx
 	pop		eax
 	add		eax, 2
@@ -377,6 +406,7 @@ CheckOrdinal PROC uses ebx ecx edx, ind:dword
 	ret
 
 CheckOrdinal endp
+
 
 start:
 	push	NULL
@@ -950,8 +980,6 @@ start:
 	mov		rva_relocation, ecx
 	jmp 	tiep
 	
-	
-	
 	tiep:
 	push	4
 	call	HexToString
@@ -991,6 +1019,16 @@ start:
 	push	hFile
 	call 	ReadFile
 	
+	pop		ecx
+	push	ecx
+	cmp		ecx, 5
+	je		get_size_reloc
+	jne		continue_read		
+	get_size_reloc:
+	xor		ecx, ecx
+	mov		ecx, dword ptr data
+	mov		sizeReloc, ecx
+	continue_read:
 	push	4
 	call	HexToString
 	
@@ -1614,7 +1652,7 @@ start:
 	;nbase
 	mov		eax, ied.nBase
 	mov		dword ptr data, eax
-	
+	mov		nbase, eax
 	push	4h
 	call	HexToString
 	
@@ -1722,7 +1760,6 @@ start:
 	mov		edx, exp_func
 	;for addresoffunction {if index_iat in index_iot: get value_in_index_iot else ok = 0 }
 	
-	
 	loop_addressoffunctions:
 	push	ecx
 	xor		eax, eax
@@ -1752,6 +1789,7 @@ start:
 	push	offset func_rva_val
 	push	hFile
 	call	ReadFile
+	
 	xor		edx, edx
 	mov		edx, func_rva_val
 	
@@ -1765,28 +1803,371 @@ start:
 	call 	Reverse
 	
 	push	offset tmp
-	push	offset ordinal_export
+	push	offset func_rva
 	call	WriteDataToFileInLine
+	
 	;-------------------------
-	;xor 	ecx, ecx
-	;pop 	ecx
-	;push	ecx
-	;call	CheckOrdinal
 	
-	;xor		ebx, ebx
-	;mov		bl, 1
-	;cmp		bl, ok
-	;je		h_ordinal
+	xor		ecx, ecx
+	pop		edx
+	pop		ecx
+	push	ecx
+	push	edx
 	
+	
+	push	ecx
+	call	CheckOrdinal
+	
+	xor		ebx, ebx
+	mov		bl, 1
+	cmp		ok, bl
+	mov		ok, bh
+	jne		dont_ordinal
+	
+	mov		index, eax
+	mov		ebx, 2
+	mul		ebx
+	
+	mov		ebx, exp_ord
+	add		ebx, eax
+	mov		ov.loffset, ebx
+	
+	push 	offset ov
+	push	0
+	push	2
+	push	offset data
+	push	hFile
+	call	ReadFile
+	
+	push	2h
+	call	HexToString
+	
+	xor		ecx, ecx
+	mov		ecx, 2h
+	push	offset tmp
+	call 	Reverse
+	
+	push	offset tmp
+	push	offset name_ordinal
+	call	WriteDataToFileInLine
+	
+	mov		eax, index
+	mov		ebx, 4
+	mul		ebx
+	
+	mov		ebx, exp_name
+	add		ebx, eax
+	mov		ov.loffset, ebx
+	
+	push 	offset ov
+	push	0
+	push	4
+	push	offset data
+	push	hFile
+	call	ReadFile
+	
+	mov		eax, dword ptr data
+	push	eax
+	
+	push	4h
+	call	HexToString
+	
+	xor		ecx, ecx
+	mov		ecx, 4h
+	push	offset tmp
+	call 	Reverse
+	
+	push	offset tmp
+	push	offset name_rva
+	call	WriteDataToFileInLine
+	
+	
+	pop		eax
+	sub		eax, delta
+	
+	mov		ov.loffset, eax
+	
+	push 	offset ov
+	push	0
+	push	128
+	push	offset name_function_exp
+	push	hFile
+	call	ReadFile
+	
+	push	offset name_function_exp
+	push	offset name_exp_func
+	call	WriteDataToFile
+	
+	jmp		set_value
+	
+	dont_ordinal:
+	xor		eax, eax
+	mov		eax, dword ptr na
+	mov		dword ptr tmp, eax	
+	push	offset tmp
+	push	offset name_ordinal
+	call	WriteDataToFileInLine
+	xor		eax, eax
+	mov		eax, dword ptr na
+	mov		dword ptr tmp, eax	
+	push	offset tmp
+	push	offset name_rva
+	call	WriteDataToFileInLine
+	xor		eax, eax
+	mov		eax, dword ptr na
+	mov		dword ptr tmp, eax	
+	push	offset tmp
+	push	offset name_exp_func
+	call	WriteDataToFile
+	
+	set_value:
 	pop		edx
 	add		edx, 4
 	pop		ecx
 	inc		ecx
 	cmp		ecx, nfunc
-	ja		h_ordinal
+	jae		h_ordinal
 	jmp 	loop_addressoffunctions
 	
 	h_ordinal:
+	
+	;---------------relocation-------------------
+	
+	push	offset titReloc
+	call	WriteTitleToFile
+	
+	xor		edx, edx
+	xor 	ecx, ecx
+	mov		cx, numberofsectionsval
+	mov		edx, offset arr_section
+	
+	loop_find_section_reloc:
+	
+	xor 	eax, eax
+	mov		eax, rva_relocation
+	xor		ebx, ebx
+	mov		ebx, dword ptr [edx]
+	
+	cmp		eax, ebx
+	jae		next_section_reloc
+	jb		finded_reloc
+	next_section_reloc:
+	add		edx, 8
+	loop	loop_find_section_reloc
+	finded_reloc:
+	mov		eax, offset relocation_section
+	sub		edx, 8
+	xor		ecx, ecx
+	mov		ecx, [edx]
+	mov		[eax], ecx
+	mov		ecx, [edx+4]
+	mov		[eax+4], ecx
+	;tinh file offset cua image import discriptor
+	xor		eax, eax
+	mov		eax, rva_relocation
+	xor		ebx, ebx
+	mov		ebx, dword ptr relocation_section
+	;sub		eax, ebx
+	xor		ecx, ecx
+	mov		ecx, offset relocation_section
+	add		ecx, 4
+	mov		ecx, [ecx]
+	sub		ebx, ecx
+	mov		delta, ebx
+	sub		eax, ebx
+	mov		offs, eax
+	mov		start_reloc, eax
+	xor		eax, eax
+	
+	
+	loop_read_reloc:
+	
+	push	eax
+	xor		eax, eax
+	mov		eax, start_reloc
+	mov		ov.loffset, eax
+	
+	push 	offset ov
+	push	NULL
+	push	4
+	push	offset rva_val
+	push	hFile
+	call	ReadFile
+	
+	xor		eax, eax
+	mov		eax, dword ptr rva_val
+	mov		dword ptr data, eax
+	
+	push	4h
+	call	HexToString
+	
+	xor		ecx, ecx
+	mov		ecx, 4h
+	push	offset tmp
+	call 	Reverse
+	
+	push	offset tmp
+	push	offset rva_reloc
+	call	WriteDataToFileInLine
+	
+	push 	NULL
+	push	NULL
+	push	4
+	push	offset sizeofblock_val
+	push	hFile
+	call	ReadFile
+	
+	xor		eax, eax
+	mov		eax, dword ptr sizeofblock_val
+	mov		dword ptr data, eax
+	
+	push	4h
+	call	HexToString
+	
+	xor		ecx, ecx
+	mov		ecx, 4h
+	push	offset tmp
+	call 	Reverse
+	
+	push	offset tmp
+	push	offset sizeofblock
+	call	WriteDataToFileInLine
+	
+	xor		eax, eax
+	mov		eax, sizeofblock_val
+	sub		eax, 8
+	shr		eax, 1
+	mov		items_val, eax
+	;Su ly in ra thap phan sau==============================
+	 
+	push	eax
+	push	offset fmt
+	push	offset bff
+	call	wsprintf
+	add 	esp, 12
+	
+	push	offset bff
+	push	offset items
+	call	WriteDataToFile
+	
+	xor		ecx, ecx
+	mov		ecx, items_val
+	loop_read_entry:
+	push	ecx
+	
+	push 	NULL
+	push	NULL
+	push	2
+	push	offset item_val
+	push	hFile
+	call	ReadFile
+	
+	xor		eax, eax
+	mov		ax, word ptr item_val
+	mov		word ptr data, ax
+	
+	push	2h
+	call	HexToString
+	
+	xor		ecx, ecx
+	mov		ecx, 2h
+	push	offset tmp
+	call 	Reverse
+	
+	push	offset tmp
+	push	offset item
+	call	WriteDataToFileInLine
+	
+	xor		eax, eax
+	mov		eax, rva_val
+	xor		ebx, ebx
+	mov		bx, item_val
+	and		bx, 0fffh
+	
+	add		eax, ebx
+	mov		dword ptr data, eax
+	
+	push	4h
+	call	HexToString
+	
+	xor		ecx, ecx
+	mov		ecx, 4h
+	push	offset tmp
+	call 	Reverse
+	
+	push	offset tmp
+	push	offset rva_item
+	call	WriteDataToFileInLine
+	
+	mov		bx, item_val
+	and		bx, 0f000h
+	
+	cmp		bx, 0
+	je		_absolute
+	cmp		bx, 03000h
+	je		_highlow
+	cmp		bx, 04000h
+	je		_highadj	
+	jne		_na
+	_absolute:
+	push	offset absolute
+	push	offset tmp
+	call	lstrcpy
+	
+	push	offset tmp
+	push	offset typ
+	call	WriteDataToFile
+	jmp		done_loop_read_entry
+	_highlow:
+	push	offset highlow
+	push	offset tmp
+	call	lstrcpy
+	
+	push	offset tmp
+	push	offset typ
+	call	WriteDataToFile
+	jmp		done_loop_read_entry
+	_highadj:
+	
+	push	offset highadj
+	push	offset tmp
+	call	lstrcpy
+	
+	push	offset tmp
+	push	offset typ
+	call	WriteDataToFile
+	jmp		done_loop_read_entry
+	_na:
+	push	offset na
+	push	offset tmp
+	call	lstrcpy
+	
+	push	offset tmp
+	push	offset typ
+	call	WriteDataToFile
+	jmp		done_loop_read_entry
+	
+	done_loop_read_entry:
+	xor		ecx, ecx
+	pop		ecx
+	dec		ecx
+	cmp		ecx, 0
+	ja		loop_read_entry
+	
+	
+	xor		ebx, ebx
+	mov		ebx, start_reloc
+	add		ebx, sizeofblock_val
+	mov		start_reloc, ebx
+	
+	xor		eax, eax
+	pop		eax
+	add		eax, sizeofblock_val
+	xor		ebx, ebx
+	mov		ebx, sizeReloc
+	cmp		eax, ebx
+	jb		loop_read_reloc
+	
 	ret
 end start
 

@@ -23,7 +23,7 @@ includelib shlwapi.lib
 	chuoi 				db "0123456789ABCDEF", 0
 	data				db	16 dup(0)		
 	tab					db 09h, 09h, 0
-	ov					OVERLAPPED <>
+	ov					dd 20 dup(0)
 	off					dd 0
 	index				dd 0
 	delta				dd 0
@@ -102,7 +102,7 @@ includelib shlwapi.lib
 	arr_section				dd 32 dup(0)
 	;----------------------------------------------------------------------
 	titIAT				db "------------------IAT------------------", 13, 10, 0
-	iid						IMAGE_IMPORT_DESCRIPTOR <>
+	iid						dd 5 dup(0)
 	module_name				db "Module name: ", 0
 	module_name_val			db 64 dup(0)
 	ofts					db " | OFTs: ", 0
@@ -116,13 +116,13 @@ includelib shlwapi.lib
 	offs					dd 0
 	ordinal					db " | Ordinal: ", 0
 	na						db "N/A", 0
-	itd						IMAGE_THUNK_DATA32 <>
+	itd						dd 0
 	
 	
 	;--------------------------------------------------------------------
 	titEAT					db "------------------EAT------------------", 13, 10, 0
 	titTableEAT				db "---------------TABLE EAT---------------", 13, 10, 0
-	ied						IMAGE_EXPORT_DIRECTORY <>
+	ied						dd 10 dup(0)
 	characteristics_exp		db "Characteristics: ", 0
 	timedatestamp_exp		db "TimeDateStamp: ", 0
 	majorversion			db "MajorVersion: ", 0
@@ -370,8 +370,12 @@ CheckOrdinal PROC uses ebx ecx edx, ind:dword
 	xor		edx, edx
 	loop_check:
 	
-	mov		ov.loffset, eax
-	push	eax
+	mov		ebx, eax
+	mov		eax, offset ov
+	add		eax, 8h
+	mov		dword ptr [eax], ebx
+	
+	push	ebx
 	push	ecx
 	push	edx
 	
@@ -447,8 +451,12 @@ start:
 	call	WriteDataToFile
 	
 	;e_lfanew
-	mov		ov.loffset, 60
-	mov		ov.OffsetHigh, 0
+	mov		eax, offset ov
+	add		eax, 8h
+	xor		ebx, ebx
+	mov		ebx, 60
+	mov		dword ptr [eax], ebx
+	
 	
 	push	offset ov
 	push	NULL
@@ -478,9 +486,12 @@ start:
 	call	WriteTitleToFile
 	
 	;signature PE
-	xor		eax, eax
-	mov		eax, off
-	mov		ov.loffset, eax
+	xor		ebx, ebx
+	mov		ebx, off
+	
+	mov		eax, offset ov
+	add		eax, 8h
+	mov		dword ptr [eax], ebx
 	
 	push	offset ov
 	push	NULL
@@ -546,9 +557,12 @@ start:
 	call	WriteDataToFile
 	
 	;sizeofoptionalheader
-	mov		eax, off
-	add		eax, 14h
-	mov		ov.loffset, eax
+	mov		ebx, off
+	add		ebx, 14h
+	mov		eax, offset ov
+	add		eax, 8h
+	mov		dword ptr [eax], ebx
+	
 	
 	push	offset ov
 	push	NULL
@@ -625,9 +639,11 @@ start:
 	call	WriteDataToFile
 	
 	;sizeofcode
-	mov		eax, off
-	add		eax, 1ch
-	mov		ov.loffset, eax
+	mov		ebx, off
+	add		ebx, 1ch
+	mov		eax, offset ov
+	add		eax, 8h
+	mov		dword ptr [eax], ebx
 	
 	push	offset ov
 	push	NULL
@@ -844,9 +860,11 @@ start:
 	call	WriteDataToFile
 	
 	;sizeofimage
-	mov		eax, off
-	add		eax, 50h
-	mov		ov.loffset, eax
+	mov		ebx, off
+	add		ebx, 50h
+	mov		eax, offset ov
+	add		eax, 8h
+	mov		dword ptr [eax], ebx
 	
 	push	offset ov
 	push	NULL
@@ -1239,6 +1257,11 @@ start:
 	call	WriteTitleToFile
 	
 	xor		edx, edx
+	mov		edx, rva_import
+	cmp		edx, 0
+	je		done_iat
+	
+	xor		edx, edx
 	xor 	ecx, ecx
 	mov		cx, numberofsectionsval
 	mov		edx, offset arr_section
@@ -1289,11 +1312,15 @@ start:
 	
 	read_image_import_descriptor:
 	
-	xor		eax, eax
-	mov		eax, offs
-	mov		ov.loffset, eax
-	add		eax, 14h
-	mov		offs, eax
+	xor		ebx, ebx
+	mov		ebx, offs
+	
+	mov		eax, offset ov
+	add		eax, 8h
+	mov		dword ptr [eax], ebx
+	
+	add		ebx, 14h
+	mov		offs, ebx
 	 
 	push 	offset ov
 	push	NULL
@@ -1302,17 +1329,27 @@ start:
 	push	hFile
 	call 	ReadFile
 	
-	
-	mov		eax, iid.Name1
+	xor		eax, eax
+	mov		eax, offset iid
+	add 	eax, 0ch
+	mov		eax, dword ptr [eax]
 	xor 	ebx, ebx
 	cmp		ebx, eax
 	je		done_iat
 	;module_name
 	xor		eax, eax
-	mov		eax, iid.Name1
-	sub		eax, delta
+	mov		eax, offset iid
+	add 	eax, 0ch
+	mov		eax, dword ptr [eax]
 	
-	mov		ov.loffset, eax
+	sub		eax, delta
+	xor		ebx, ebx
+	mov		ebx, eax
+	
+	mov		eax, offset ov
+	add		eax, 8h
+	mov		dword ptr [eax], ebx
+
 	
 	push 	offset ov
 	push	NULL
@@ -1326,7 +1363,10 @@ start:
 	call	WriteDataToFileInLineByNumber
 	;ofts
 	xor		eax, eax
-	mov		eax, iid.OriginalFirstThunk
+	mov		eax, offset iid
+	add 	eax, 0h
+	mov		eax, dword ptr [eax]
+	
 	mov		dword ptr data, eax
 	
 	push	4h
@@ -1342,7 +1382,10 @@ start:
 	call	WriteDataToFileInLine
 	;TimeDatestamp
 	xor		eax, eax
-	mov		eax, iid.TimeDateStamp
+	mov		eax, offset iid
+	add 	eax, 4h
+	mov		eax, dword ptr [eax]
+	
 	mov		dword ptr data, eax
 	push	4h
 	call	HexToString
@@ -1357,7 +1400,10 @@ start:
 	call	WriteDataToFileInLine
 	;Forwarderchain
 	xor		eax, eax
-	mov		eax, iid.ForwarderChain
+	mov		eax, offset iid
+	add 	eax, 8h
+	mov		eax, dword ptr [eax]
+	
 	mov		dword ptr data, eax
 	push	4h
 	call	HexToString
@@ -1373,7 +1419,10 @@ start:
 	
 	;name1
 	xor		eax, eax
-	mov		eax, iid.Name1
+	mov		eax, offset iid
+	add 	eax, 0ch
+	mov		eax, dword ptr [eax]
+	
 	mov		dword ptr data, eax
 	push	4h
 	call	HexToString
@@ -1389,7 +1438,10 @@ start:
 	
 	;fts
 	xor		eax, eax
-	mov		eax, iid.FirstThunk
+	mov		eax, offset iid
+	add 	eax, 10h
+	mov		eax, dword ptr [eax]
+	
 	mov		dword ptr data, eax
 	push	4h
 	call	HexToString
@@ -1404,12 +1456,16 @@ start:
 	call	WriteDataToFile
 	
 	xor		ebx, ebx
-	mov		ebx, iid.OriginalFirstThunk
+	mov		ebx, dword ptr [iid]
 	sub		ebx, delta
 	
 	read_array_itd:
-	mov		ov.loffset, ebx
+	mov		eax, offset ov
+	add		eax, 8h
+	mov		dword ptr [eax], ebx
+	
 	push	ebx
+	
 	push	offset ov
 	push	0
 	push	4
@@ -1423,7 +1479,7 @@ start:
 	
 	;ordinal
 	xor		eax, eax
-	mov		eax, itd.u1.Ordinal
+	mov		eax, dword ptr itd
 	xor		ebx, ebx
 	mov		ebx, 80000000h
 	and		ebx, eax
@@ -1459,10 +1515,13 @@ start:
 	
 	read_addressofdata:
 	xor		eax, eax
-	mov		eax, itd.u1.AddressOfData
+	mov		eax, dword ptr itd
 	sub		eax, delta
+	mov		ebx, eax
 	;doc va ghi hint
-	mov		ov.loffset, eax
+	mov		eax, offset ov
+	add		eax, 8h
+	mov		dword ptr [eax], ebx
 
 	push	offset ov
 	push	0
@@ -1512,6 +1571,11 @@ start:
 	call	WriteTitleToFile
 	
 	xor		edx, edx
+	mov		edx, rva_export
+	cmp		edx, 0
+	je		h_ordinal
+	
+	xor		edx, edx
 	xor 	ecx, ecx
 	mov		cx, numberofsectionsval
 	mov		edx, offset arr_section
@@ -1559,8 +1623,11 @@ start:
 	
 	
 	mov		offs, eax
+	mov		ebx, eax
 	
-	mov		ov.loffset, eax
+	mov		eax, offset ov
+	add		eax, 8h
+	mov		dword ptr [eax], ebx
 	
 	push	offset ov
 	push	NULL
@@ -1570,7 +1637,7 @@ start:
 	call	ReadFile
 	
 	;Characteristics
-	mov		eax, ied.Characteristics
+	mov		eax, dword ptr ied
 	mov		dword ptr data, eax
 	
 	push	4h
@@ -1586,7 +1653,9 @@ start:
 	call	WriteDataToFile
 	
 	;TimeDateStamp_exp
-	mov		eax, ied.TimeDateStamp
+	mov		eax, offset ied
+	add		eax, 4h
+	mov		eax, dword ptr [eax]
 	mov		dword ptr data, eax
 	
 	push	4h
@@ -1602,7 +1671,10 @@ start:
 	call	WriteDataToFile
 	
 	;MajorVersion
-	mov		ax, ied.MajorVersion
+	
+	mov		eax, offset ied
+	add		eax, 8h
+	mov		eax, dword ptr [eax]
 	mov		word ptr data, ax
 	
 	push	2h
@@ -1618,7 +1690,11 @@ start:
 	call	WriteDataToFile
 	
 	;MinorVersion
-	mov		ax, ied.MinorVersion
+	
+	mov		eax, offset ied
+	add		eax, 8h
+	mov		eax, dword ptr [eax]
+	shr		eax, 16
 	mov		word ptr data, ax
 	
 	push	2h
@@ -1634,7 +1710,9 @@ start:
 	call	WriteDataToFile
 	
 	;nname
-	mov		eax, ied.nName
+	mov		eax, offset ied
+	add		eax, 0ch
+	mov		eax, dword ptr [eax]
 	mov		dword ptr data, eax
 	
 	push	4h
@@ -1650,7 +1728,9 @@ start:
 	call	WriteDataToFile
 	
 	;nbase
-	mov		eax, ied.nBase
+	mov		eax, offset ied
+	add		eax, 10h
+	mov		eax, dword ptr [eax]
 	mov		dword ptr data, eax
 	mov		nbase, eax
 	push	4h
@@ -1666,7 +1746,9 @@ start:
 	call	WriteDataToFile
 	
 	;numberoffunc
-	mov		eax, ied.NumberOfFunctions
+	mov		eax, offset ied
+	add		eax, 14h
+	mov		eax, dword ptr [eax]
 	mov		dword ptr data, eax
 	mov		nfunc, eax
 	
@@ -1682,7 +1764,9 @@ start:
 	push	offset numberoffunctions
 	call	WriteDataToFile
 	;numberofnames
-	mov		eax, ied.NumberOfNames
+	mov		eax, offset ied
+	add		eax, 18h
+	mov		eax, dword ptr [eax]
 	mov		dword ptr data, eax
 	mov		nName, eax
 	
@@ -1699,7 +1783,9 @@ start:
 	call	WriteDataToFile
 	
 	;addressoffunctions
-	mov		eax, ied.AddressOfFunctions
+	mov		eax, offset ied
+	add		eax, 1ch
+	mov		eax, dword ptr [eax]
 	mov		dword ptr data, eax
 	sub		eax, delta
 	mov		exp_func, eax
@@ -1717,7 +1803,9 @@ start:
 	call	WriteDataToFile
 
 	;addressofnames
-	mov		eax, ied.AddressOfNames
+	mov		eax, offset ied
+	add		eax, 20h
+	mov		eax, dword ptr [eax]
 	mov		dword ptr data, eax
 	sub		eax, delta
 	mov		exp_name, eax
@@ -1735,7 +1823,9 @@ start:
 	call	WriteDataToFile
 	
 	;addressofnameordinals
-	mov		eax, ied.AddressOfNameOrdinals
+	mov		eax, offset ied
+	add		eax, 24h
+	mov		eax, dword ptr [eax]
 	mov		dword ptr data, eax
 	sub		eax, delta
 	mov		exp_ord, eax
@@ -1762,6 +1852,29 @@ start:
 	
 	loop_addressoffunctions:
 	push	ecx
+	
+	;---------------------
+	
+	mov		eax, offset ov
+	add		eax, 8h
+	mov		dword ptr [eax], edx
+	
+	push	edx
+	
+	push	offset ov
+	push 	NULL
+	push	4
+	push	offset func_rva_val
+	push	hFile
+	call	ReadFile
+	
+	xor		edx, edx
+	mov		edx, func_rva_val
+	
+	cmp		edx, 00000000h
+	je		set_value
+	
+	
 	xor		eax, eax
 	mov		eax, nbase
 	
@@ -1779,19 +1892,6 @@ start:
 	push	offset tmp
 	push	offset ordinal_export
 	call	WriteDataToFileInLine
-	;---------------------
-	mov		ov.loffset, edx
-	push	edx
-	
-	push	offset ov
-	push 	NULL
-	push	4
-	push	offset func_rva_val
-	push	hFile
-	call	ReadFile
-	
-	xor		edx, edx
-	mov		edx, func_rva_val
 	
 	mov		dword ptr data, edx
 	push	4h
@@ -1830,7 +1930,10 @@ start:
 	
 	mov		ebx, exp_ord
 	add		ebx, eax
-	mov		ov.loffset, ebx
+	
+	mov		eax, offset ov
+	add		eax, 8h
+	mov		dword ptr [eax], ebx
 	
 	push 	offset ov
 	push	0
@@ -1857,7 +1960,10 @@ start:
 	
 	mov		ebx, exp_name
 	add		ebx, eax
-	mov		ov.loffset, ebx
+	
+	mov		eax, offset ov
+	add		eax, 8h
+	mov		dword ptr [eax], ebx
 	
 	push 	offset ov
 	push	0
@@ -1884,8 +1990,10 @@ start:
 	
 	pop		eax
 	sub		eax, delta
-	
-	mov		ov.loffset, eax
+	mov		ebx, eax
+	mov		eax, offset ov
+	add		eax, 8h
+	mov		dword ptr [eax], ebx
 	
 	push 	offset ov
 	push	0
@@ -1937,6 +2045,11 @@ start:
 	call	WriteTitleToFile
 	
 	xor		edx, edx
+	mov		edx, rva_relocation
+	cmp		edx, 0
+	je		done_end
+	
+	xor		edx, edx
 	xor 	ecx, ecx
 	mov		cx, numberofsectionsval
 	mov		edx, offset arr_section
@@ -1985,7 +2098,10 @@ start:
 	push	eax
 	xor		eax, eax
 	mov		eax, start_reloc
-	mov		ov.loffset, eax
+	mov		ebx, eax
+	mov		eax, offset ov
+	add		eax, 8h
+	mov		dword ptr [eax], ebx
 	
 	push 	offset ov
 	push	NULL
@@ -2038,7 +2154,7 @@ start:
 	sub		eax, 8
 	shr		eax, 1
 	mov		items_val, eax
-	;Su ly in ra thap phan sau==============================
+	
 	 
 	push	eax
 	push	offset fmt
@@ -2167,7 +2283,13 @@ start:
 	mov		ebx, sizeReloc
 	cmp		eax, ebx
 	jb		loop_read_reloc
+	done_end:
+	push	hOutput
+	call 	CloseHandle
+
 	
+	push	hFile
+	call 	CloseHandle
 	ret
 end start
 

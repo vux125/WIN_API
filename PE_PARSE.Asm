@@ -2270,7 +2270,6 @@ start:
 	cmp		ecx, 0
 	ja		loop_read_entry
 	
-	
 	xor		ebx, ebx
 	mov		ebx, start_reloc
 	add		ebx, sizeofblock_val
@@ -2287,7 +2286,6 @@ start:
 	push	hOutput
 	call 	CloseHandle
 
-	
 	push	hFile
 	call 	CloseHandle
 	ret

